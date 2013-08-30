@@ -4,7 +4,10 @@ import (
 	"os"
 	l "log"
 	"fmt"
+	"time"
 	"bufio"
+	"regexp"
+	"strconv"
 	"strings"
 	"github.com/percona/percona-go-mysql/log"
 )
@@ -18,6 +21,9 @@ type SlowLogParser struct {
 	inQuery bool
 	queryLines uint
 	event *log.Event
+	timeRe *regexp.Regexp
+	userRe *regexp.Regexp
+	metricsRe *regexp.Regexp
 }
 
 func NewSlowLogParser(file *os.File, debug bool) *SlowLogParser { 
@@ -33,7 +39,10 @@ func NewSlowLogParser(file *os.File, debug bool) *SlowLogParser {
 		inHeader: false,
 		inQuery: false,
 		queryLines: 0,
-		event: new(log.Event),
+		event: log.NewEvent(),
+		timeRe: regexp.MustCompile(`Time: (\S+\s{1,2}\S+)`),
+		userRe: regexp.MustCompile(`User@Host: ([^\[]+|\[[^[]+\]).*?@ (\S*) \[(.*)\]`),
+		metricsRe: regexp.MustCompile(`(\w+): (\S+|\z)`),
 	}
 	return p
 }
@@ -69,7 +78,14 @@ func (p *SlowLogParser) IsMetaLine(line string) bool {
 		return true
 	}
 	return false
+}
 
+func ConvertSlowLogTs(ts string) *time.Time {
+	t, err := time.Parse("060102 15:04:05", ts)
+	if err != nil {
+		return nil
+	}
+	return &t
 }
 
 func (p *SlowLogParser) parseHeader(line string) {
@@ -84,10 +100,17 @@ func (p *SlowLogParser) parseHeader(line string) {
 		if p.debug { // @debug
 			l.Println("time")
 		}
+		m := p.timeRe.FindStringSubmatch(line)
+		p.event.Ts = m[1]
+		// @todo handle this buggy input:
+		// # Time: 071218 11:48:27 # User@Host: [SQL_SLAVE] @  []
 	} else if strings.HasPrefix(line, "# User") {
 		if p.debug { // @debug
 			l.Println("user")
 		}
+		m := p.userRe.FindStringSubmatch(line)
+		p.event.User = m[1]
+		p.event.Host = m[2]
 	} else if strings.HasPrefix(line, "# admin") {
 		if p.debug { // @debug
 			l.Println("admin command")
@@ -96,13 +119,31 @@ func (p *SlowLogParser) parseHeader(line string) {
 		if p.debug { // @debug
 			l.Println("metrics")
 		}
+		m := p.metricsRe.FindAllStringSubmatch(line, -1)
+		for _, smv := range m {
+			// [String, Metric, Value], e.g. ["Query_time: 2" "Query_time" "2"] 
+			if strings.HasSuffix(smv[1], "_time") || strings.HasSuffix(smv[1], "_wait") {
+				// microsecond value
+				val, _ := strconv.ParseFloat(smv[2], 32)
+				p.event.TimeMetrics[smv[1]] = float32(val)
+			} else if smv[2] == "Yes" || smv[2] == "No" {
+				// boolean value
+				if smv[2] == "Yes" {
+					p.event.BoolMetrics[smv[1]] = true
+				} else {
+					p.event.BoolMetrics[smv[1]] = false
+				}
+			} else {
+				// integer value
+				val, _ := strconv.ParseUint(smv[2], 10, 64)
+				p.event.NumberMetrics[smv[1]] = val
+			}
+		}
 	}
 }
 
 func (p *SlowLogParser) parseQuery(line string) {
 	if strings.HasPrefix(line, "#") || p.IsMetaLine(line) {
-
-
 		p.inHeader = true
 		p.inQuery = false
 		p.sendEvent(true, false)
@@ -139,8 +180,9 @@ func (p *SlowLogParser) sendEvent(inHeader bool, inQuery bool) {
 	if p.debug { // @debug
 		l.Println("send event")
 	}
+	p.event.Query = strings.TrimSuffix(p.event.Query, ";")
 	p.EventChan <- p.event
-	p.event = new(log.Event)
+	p.event = log.NewEvent()
 	p.queryLines = 0
 	p.inHeader = inHeader
 	p.inQuery = inQuery
