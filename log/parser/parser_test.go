@@ -22,16 +22,24 @@ type SlowLogTestSuite struct {
 
 var _ = Suite(&SlowLogTestSuite{})
 
-func (s *SlowLogTestSuite) TestSlowLogParser(t *C) {
+// No input, no events.
+func (s *SlowLogTestSuite) TestParserEmptySlowLog(t *C) {
+	got := ParseSlowLog("empty.log")
+	expect := []log.Event{}
+	t.Check(got, EventsEqual, &expect)
+}
+
+// slow001 is a most basic basic, normal slow log--nothing exotic.
+func (s *SlowLogTestSuite) TestParserSlowLog001(t *C) {
 	got := ParseSlowLog("slow001.log")
 	expect := []log.Event{
 		{
-			Ts:     "071015 21:43:52",
-			Admin:  false,
-			Query:  `select sleep(2) from n`,
-			User:   "root",
-			Host:   "localhost",
-			Db:     "test",
+			Ts:    "071015 21:43:52",
+			Admin: false,
+			Query: `select sleep(2) from n`,
+			User:  "root",
+			Host:  "localhost",
+			Db:    "test",
 			TimeMetrics: map[string]float32{
 				"Query_time": 2,
 				"Lock_time":  0,
@@ -43,12 +51,12 @@ func (s *SlowLogTestSuite) TestSlowLogParser(t *C) {
 			BoolMetrics: map[string]bool{},
 		},
 		{
-			Ts:     "071015 21:45:10",
-			Admin:  false,
-			Query:  `select sleep(2) from test.n`,
-			User:   "root",
-			Host:   "localhost",
-			Db:     "sakila",
+			Ts:    "071015 21:45:10",
+			Admin: false,
+			Query: `select sleep(2) from test.n`,
+			User:  "root",
+			Host:  "localhost",
+			Db:    "sakila",
 			TimeMetrics: map[string]float32{
 				"Query_time": 2,
 				"Lock_time":  0,
@@ -63,15 +71,16 @@ func (s *SlowLogTestSuite) TestSlowLogParser(t *C) {
 	t.Check(got, EventsEqual, &expect)
 }
 
+// slow002 is a basic slow log like slow001 but with more metrics, multi-line queries, etc.
 func (s *SlowLogTestSuite) TestParseSlowLog002(t *C) {
 	got := ParseSlowLog("slow002.log")
 	expect := []log.Event{
 		{
-			Query:  "BEGIN",
-			Ts:     "071218 11:48:27",
-			Admin:  false,
-			User:   "[SQL_SLAVE]",
-			Host:   "",
+			Query: "BEGIN",
+			Ts:    "071218 11:48:27",
+			Admin: false,
+			User:  "[SQL_SLAVE]",
+			Host:  "",
 			TimeMetrics: map[string]float32{
 				"Query_time": 0.000012,
 				"Lock_time":  0.000000,
@@ -97,9 +106,9 @@ func (s *SlowLogTestSuite) TestParseSlowLog002(t *C) {
 			Query: `update db2.tuningdetail_21_265507 n
       inner join db1.gonzo a using(gonzo) 
       set n.column1 = a.column1, n.word3 = a.word3`,
-			Admin:  false,
-			User:   "[SQL_SLAVE]",
-			Host:   "",
+			Admin: false,
+			User:  "[SQL_SLAVE]",
+			Host:  "",
 			TimeMetrics: map[string]float32{
 				"Query_time": 0.726052,
 				"Lock_time":  0.000091,
@@ -123,9 +132,9 @@ func (s *SlowLogTestSuite) TestParseSlowLog002(t *C) {
 		{
 			Query: `INSERT INTO db3.vendor11gonzo (makef, bizzle)
 VALUES ('', 'Exact')`,
-			Admin:  false,
-			User:   "[SQL_SLAVE]",
-			Host:   "",
+			Admin: false,
+			User:  "[SQL_SLAVE]",
+			Host:  "",
 			TimeMetrics: map[string]float32{
 				"InnoDB_queue_wait":    0.000000,
 				"Lock_time":            0.000077,
@@ -156,9 +165,9 @@ VALUES ('', 'Exact')`,
 			Query: `UPDATE db4.vab3concept1upload
 SET    vab3concept1id = '91848182522'
 WHERE  vab3concept1upload='6994465'`,
-			Admin:  false,
-			User:   "[SQL_SLAVE]",
-			Host:   "",
+			Admin: false,
+			User:  "[SQL_SLAVE]",
+			Host:  "",
 			TimeMetrics: map[string]float32{
 				"Query_time":           0.033384,
 				"InnoDB_IO_r_wait":     0.000000,
@@ -188,9 +197,9 @@ WHERE  vab3concept1upload='6994465'`,
 		{
 			Query: `INSERT INTO db1.conch (word3, vid83)
 VALUES ('211', '18')`,
-			Admin:  false,
-			User:   "[SQL_SLAVE]",
-			Host:   "",
+			Admin: false,
+			User:  "[SQL_SLAVE]",
+			Host:  "",
 			TimeMetrics: map[string]float32{
 				"InnoDB_queue_wait":    0.000000,
 				"Query_time":           0.000530,
@@ -220,9 +229,9 @@ VALUES ('211', '18')`,
 		{
 			Query: `UPDATE foo.bar
 SET    biz = '91848182522'`,
-			Admin:  false,
-			User:   "[SQL_SLAVE]",
-			Host:   "",
+			Admin: false,
+			User:  "[SQL_SLAVE]",
+			Host:  "",
 			TimeMetrics: map[string]float32{
 				"Lock_time":            0.000027,
 				"InnoDB_rec_lock_wait": 0.000000,
@@ -253,9 +262,9 @@ SET    biz = '91848182522'`,
 			Query: `UPDATE bizzle.bat
 SET    boop='bop: 899'
 WHERE  fillze='899'`,
-			Admin:  false,
-			User:   "[SQL_SLAVE]",
-			Host:   "",
+			Admin: false,
+			User:  "[SQL_SLAVE]",
+			Host:  "",
 			TimeMetrics: map[string]float32{
 				"Query_time":           0.000530,
 				"InnoDB_IO_r_wait":     0.000000,
@@ -285,9 +294,9 @@ WHERE  fillze='899'`,
 		{
 			Query: `UPDATE foo.bar
 SET    biz = '91848182522'`,
-			Admin:  false,
-			User:   "[SQL_SLAVE]",
-			Host:   "",
+			Admin: false,
+			User:  "[SQL_SLAVE]",
+			Host:  "",
 			TimeMetrics: map[string]float32{
 				"Query_time":           0.000530,
 				"Lock_time":            0.000027,
@@ -317,3 +326,368 @@ SET    biz = '91848182522'`,
 	}
 	t.Check(got, EventsEqual, &expect)
 }
+
+// slow003 starts with a blank line.  I guess this once messed up SlowLogParser.pm?
+func (s *SlowLogTestSuite) TestParserSlowLog003(t *C) {
+	got := ParseSlowLog("slow003.log")
+	expect := []log.Event{
+		{
+			Query: "BEGIN",
+			Admin: false,
+			Host:  "",
+			Ts:    "071218 11:48:27",
+			User:  "[SQL_SLAVE]",
+			BoolMetrics: map[string]bool{
+				"Filesort_on_disk":  false,
+				"Tmp_table_on_disk": false,
+				"Filesort":          false,
+				"Full_join":         false,
+				"Full_scan":         false,
+				"QC_Hit":            false,
+				"Tmp_table":         false,
+			},
+			TimeMetrics: map[string]float32{
+				"Lock_time":  0.000000,
+				"Query_time": 0.000012,
+			},
+			NumberMetrics: map[string]uint64{
+				"Merge_passes":  0,
+				"Rows_examined": 0,
+				"Rows_sent":     0,
+				"Thread_id":     10,
+			},
+		},
+	}
+	t.Check(got, EventsEqual, &expect)
+}
+
+// I don't know what's special about this slow004.
+func (s *SlowLogTestSuite) TestParserSlowLog004(t *C) {
+	got := ParseSlowLog("slow004.log")
+	expect := []log.Event{
+		{
+			Query: "select 12_13_foo from (select 12foo from 123_bar) as 123baz",
+			Admin: false,
+			Host:  "localhost",
+			Ts:    "071015 21:43:52",
+			User:  "root",
+			BoolMetrics: map[string]bool{
+			},
+			TimeMetrics: map[string]float32{
+				"Lock_time":  0.000000,
+				"Query_time": 2.000000,
+			},
+			NumberMetrics: map[string]uint64{
+				"Rows_sent":     1,
+				"Rows_examined": 0,
+			},
+		},
+	}
+	t.Check(got, EventsEqual, &expect)
+}
+
+// slow005 has a multi-line query with tabs in it.  A pathological case that
+// would probably break the parser is a query like:
+//   SELECT * FROM foo WHERE col = "Hello
+//   # Query_time: 10
+//   " LIMIT 1;
+// There's no easy way to detect that "# Query_time" is part of the query and
+// not part of the next event's header.
+func (s *SlowLogTestSuite) TestParserSlowLog005(t *C) {
+	got := ParseSlowLog("slow005.log")
+	expect := []log.Event{
+		{
+			Query: "foo\nbar\n\t\t\t0 AS counter\nbaz",
+			Admin: false,
+			Host:  "",
+			Ts:    "071218 11:48:27",
+			User:  "[SQL_SLAVE]",
+			BoolMetrics: map[string]bool{
+				"Filesort_on_disk":  false,
+				"Tmp_table_on_disk": false,
+				"Filesort":          false,
+				"Full_join":         false,
+				"Full_scan":         false,
+				"QC_Hit":            false,
+				"Tmp_table":         false,
+			},
+			TimeMetrics: map[string]float32{
+				"Query_time": 0.000012,
+				"Lock_time":  0.000000,
+			},
+			NumberMetrics: map[string]uint64{
+				"Merge_passes":  0,
+				"Rows_examined": 0,
+				"Rows_sent":     0,
+				"Thread_id":     10,
+			},
+		},
+	}
+	t.Check(got, EventsEqual, &expect)
+}
+
+// slow006 has the Schema: db metric _or_ use db; lines before the queries.
+// Schema value should be used for log.Event.Db is no use db; line is present.
+func (s *SlowLogTestSuite) TestParserSlowLog006(t *C) {
+	got := ParseSlowLog("slow006.log")
+	expect := []log.Event{
+		{
+			Query: "SELECT col FROM foo_tbl",
+			Db: "foo",
+			Admin: false,
+			Host:  "",
+			Ts:    "071218 11:48:27",
+			User:  "[SQL_SLAVE]",
+			BoolMetrics: map[string]bool{
+				"Filesort_on_disk":  false,
+				"Tmp_table_on_disk": false,
+				"Filesort":          false,
+				"Full_join":         false,
+				"Full_scan":         false,
+				"QC_Hit":            false,
+				"Tmp_table":         false,
+			},
+			TimeMetrics: map[string]float32{
+				"Query_time": 0.000012,
+				"Lock_time":  0.000000,
+			},
+			NumberMetrics: map[string]uint64{
+				"Merge_passes":  0,
+				"Rows_examined": 0,
+				"Rows_sent":     0,
+				"Thread_id":     10,
+			},
+		},
+		{
+			Query: "SELECT col FROM foo_tbl",
+			Db: "foo",
+			Admin: false,
+			Host:  "",
+			Ts:    "071218 11:48:57",
+			User:  "[SQL_SLAVE]",
+			BoolMetrics: map[string]bool{
+				"Filesort_on_disk":  false,
+				"Tmp_table_on_disk": false,
+				"Filesort":          false,
+				"Full_join":         false,
+				"Full_scan":         false,
+				"QC_Hit":            false,
+				"Tmp_table":         false,
+			},
+			TimeMetrics: map[string]float32{
+				"Query_time": 0.000012,
+				"Lock_time":  0.000000,
+			},
+			NumberMetrics: map[string]uint64{
+				"Merge_passes":  0,
+				"Rows_examined": 0,
+				"Rows_sent":     0,
+				"Thread_id":     10,
+			},
+		},
+		{
+			Query: "SELECT col FROM bar_tbl",
+			Db: "bar",
+			Admin: false,
+			Host:  "",
+			Ts:    "071218 11:48:57",
+			User:  "[SQL_SLAVE]",
+			BoolMetrics: map[string]bool{
+				"Filesort_on_disk":  false,
+				"Tmp_table_on_disk": false,
+				"Filesort":          false,
+				"Full_join":         false,
+				"Full_scan":         false,
+				"QC_Hit":            false,
+				"Tmp_table":         false,
+			},
+			TimeMetrics: map[string]float32{
+				"Query_time": 0.000012,
+				"Lock_time":  0.000000,
+			},
+			NumberMetrics: map[string]uint64{
+				"Merge_passes":  0,
+				"Rows_examined": 0,
+				"Rows_sent":     0,
+				"Thread_id":     20,
+			},
+		},
+		{
+			Query: "SELECT col FROM bar_tbl",
+			Db: "bar",
+			Admin: false,
+			Host:  "",
+			Ts:    "071218 11:49:05",
+			User:  "[SQL_SLAVE]",
+			BoolMetrics: map[string]bool{
+				"Filesort_on_disk":  false,
+				"Tmp_table_on_disk": false,
+				"Filesort":          false,
+				"Full_join":         false,
+				"Full_scan":         false,
+				"QC_Hit":            false,
+				"Tmp_table":         false,
+			},
+			TimeMetrics: map[string]float32{
+				"Query_time": 0.000012,
+				"Lock_time":  0.000000,
+			},
+			NumberMetrics: map[string]uint64{
+				"Merge_passes":  0,
+				"Rows_examined": 0,
+				"Rows_sent":     0,
+				"Thread_id":     10,
+			},
+		},
+		{
+			Query: "SELECT col FROM bar_tbl",
+			Db: "bar",
+			Admin: false,
+			Host:  "",
+			Ts:    "071218 11:49:07",
+			User:  "[SQL_SLAVE]",
+			BoolMetrics: map[string]bool{
+				"Filesort_on_disk":  false,
+				"Tmp_table_on_disk": false,
+				"Filesort":          false,
+				"Full_join":         false,
+				"Full_scan":         false,
+				"QC_Hit":            false,
+				"Tmp_table":         false,
+			},
+			TimeMetrics: map[string]float32{
+				"Query_time": 0.000012,
+				"Lock_time":  0.000000,
+			},
+			NumberMetrics: map[string]uint64{
+				"Merge_passes":  0,
+				"Rows_examined": 0,
+				"Rows_sent":     0,
+				"Thread_id":     20,
+			},
+		},
+		{
+			Query: "SELECT col FROM foo_tbl",
+			Db: "foo",
+			Admin: false,
+			Host:  "",
+			Ts:    "071218 11:49:30",
+			User:  "[SQL_SLAVE]",
+			BoolMetrics: map[string]bool{
+				"Filesort_on_disk":  false,
+				"Tmp_table_on_disk": false,
+				"Filesort":          false,
+				"Full_join":         false,
+				"Full_scan":         false,
+				"QC_Hit":            false,
+				"Tmp_table":         false,
+			},
+			TimeMetrics: map[string]float32{
+				"Query_time": 0.000012,
+				"Lock_time":  0.000000,
+			},
+			NumberMetrics: map[string]uint64{
+				"Merge_passes":  0,
+				"Rows_examined": 0,
+				"Rows_sent":     0,
+				"Thread_id":     30,
+			},
+		},
+	}
+	t.Check(got, EventsEqual, &expect)
+}
+
+// slow007 has Schema: db1 _and_ use db2;.  db2 should be used.
+func (s *SlowLogTestSuite) TestParserSlowLog007(t *C) {
+	got := ParseSlowLog("slow007.log")
+	expect := []log.Event{
+		{
+			Query: "SELECT fruit FROM trees",
+			Db: "db2",
+			Admin: false,
+			Host:  "",
+			Ts:    "071218 11:48:27",
+			User:  "[SQL_SLAVE]",
+			BoolMetrics: map[string]bool{
+			},
+			TimeMetrics: map[string]float32{
+				"Query_time": 0.000012,
+				"Lock_time":  0.000000,
+			},
+			NumberMetrics: map[string]uint64{
+				"Rows_examined": 0,
+				"Rows_sent":     0,
+				"Thread_id":     3,
+			},
+		},
+	}
+	t.Check(got, EventsEqual, &expect)
+}
+
+// slow008 has 4 interesting things (which makes it a poor test case since we're
+// testing many things at once):
+//   1) an admin command, e.g.: # administrator command: Quit;
+//   2) a SET NAMES query; SET <certain vars> are ignored
+//   3) No Time metrics
+//   4) IPs in the host metric, but we don't currently support these
+func (s *SlowLogTestSuite) TestParserSlowLog008(t *C) {
+	got := ParseSlowLog("slow008.log")
+	expect := []log.Event{
+		{
+			Query: "Quit",
+			Db: "db1",
+			Admin: true,
+			Host:  "",
+			User:  "meow",
+			BoolMetrics: map[string]bool{
+			},
+			TimeMetrics: map[string]float32{
+				"Query_time": 0.000002,
+				"Lock_time":  0.000000,
+			},
+			NumberMetrics: map[string]uint64{
+				"Rows_examined": 0,
+				"Rows_sent":     0,
+				"Thread_id":     5,
+			},
+		},
+		{
+			Query: "SET NAMES utf8",
+			Db: "db",
+			Admin: false,
+			Host:  "",
+			User:  "meow",
+			BoolMetrics: map[string]bool{
+			},
+			TimeMetrics: map[string]float32{
+				"Query_time": 0.000899,
+				"Lock_time":  0.000000,
+			},
+			NumberMetrics: map[string]uint64{
+				"Rows_examined": 0,
+				"Rows_sent":     0,
+				"Thread_id":     6,
+			},
+		},
+		{
+			Query: "SELECT MIN(id),MAX(id) FROM tbl",
+			Db: "db2",
+			Admin: false,
+			Host:  "",
+			User:  "meow",
+			BoolMetrics: map[string]bool{
+			},
+			TimeMetrics: map[string]float32{
+				"Query_time": 0.018799,
+				"Lock_time":  0.009453,
+			},
+			NumberMetrics: map[string]uint64{
+				"Rows_examined": 0,
+				"Rows_sent":     0,
+				"Thread_id":     6,
+			},
+		},
+	}
+	t.Check(got, EventsEqual, &expect)
+}
+

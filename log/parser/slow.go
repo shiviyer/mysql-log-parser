@@ -24,12 +24,16 @@ type SlowLogParser struct {
 	timeRe *regexp.Regexp
 	userRe *regexp.Regexp
 	metricsRe *regexp.Regexp
+	adminRe *regexp.Regexp
+	setRe *regexp.Regexp
 }
 
 func NewSlowLogParser(file *os.File, debug bool) *SlowLogParser { 
 	scanner := bufio.NewScanner(file)
-	if debug {
+	if debug { // @debug
 		l.SetFlags(l.Ltime | l.Lmicroseconds)
+		fmt.Println()
+		l.Println("parsing " + file.Name())
 	}
 	p := &SlowLogParser{
 		file: file,
@@ -43,6 +47,8 @@ func NewSlowLogParser(file *os.File, debug bool) *SlowLogParser {
 		timeRe: regexp.MustCompile(`Time: (\S+\s{1,2}\S+)`),
 		userRe: regexp.MustCompile(`User@Host: ([^\[]+|\[[^[]+\]).*?@ (\S*) \[(.*)\]`),
 		metricsRe: regexp.MustCompile(`(\w+): (\S+|\z)`),
+		adminRe: regexp.MustCompile(`command: (.+)`),
+		setRe: regexp.MustCompile(`SET (?:last_insert_id|insert_id|timestamp)`),
 	}
 	return p
 }
@@ -121,6 +127,12 @@ func (p *SlowLogParser) parseHeader(line string) {
 		if p.debug { // @debug
 			l.Println("admin command")
 		}
+		p.event.Admin = true
+		m := p.adminRe.FindStringSubmatch(line)
+		p.event.Query= m[1]
+
+		// admin commands should be the last line of the event.
+		p.sendEvent(false, false)
 	} else {
 		if p.debug { // @debug
 			l.Println("metrics")
@@ -139,6 +151,8 @@ func (p *SlowLogParser) parseHeader(line string) {
 				} else {
 					p.event.BoolMetrics[smv[1]] = false
 				}
+			} else if smv[1] == "Schema" {
+				p.event.Db = smv[2]
 			} else {
 				// integer value
 				val, _ := strconv.ParseUint(smv[2], 10, 64)
@@ -164,7 +178,7 @@ func (p *SlowLogParser) parseQuery(line string) {
 		db := strings.TrimPrefix(line, "use ")
 		db = strings.TrimRight(db, ";")
 		p.event.Db = db
-	} else if p.queryLines == 0 && strings.HasPrefix(line, "SET ") {
+	} else if p.setRe.MatchString(line) {
 		if p.debug { // @debug
 			l.Println("set var")
 		}
@@ -186,8 +200,14 @@ func (p *SlowLogParser) sendEvent(inHeader bool, inQuery bool) {
 	if p.debug { // @debug
 		l.Println("send event")
 	}
+
+	// Clean up the event.
 	p.event.Query = strings.TrimSuffix(p.event.Query, ";")
+
+	// Send the event.  This will block.
 	p.EventChan <- p.event
+
+	// Make a new event and reset our metadata.
 	p.event = log.NewEvent()
 	p.queryLines = 0
 	p.inHeader = inHeader
