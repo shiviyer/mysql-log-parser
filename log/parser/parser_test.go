@@ -61,9 +61,11 @@ func (s *SlowLogTestSuite) TestSlowLogParser(t *C) {
 		},
 	}
 	t.Check(got, EventsEqual, &expect)
+}
 
-	got = ParseSlowLog("slow002.log")
-	expect = []log.Event{
+func (s *SlowLogTestSuite) TestParseSlowLog002(t *C) {
+	got := ParseSlowLog("slow002.log")
+	expect := []log.Event{
 		{
 			Query:  "BEGIN",
 			Ts:     "071218 11:48:27",
@@ -110,7 +112,7 @@ func (s *SlowLogTestSuite) TestSlowLogParser(t *C) {
 			},
 			BoolMetrics: map[string]bool{
 				"Filesort":          false,
-				"Full_scan":         false,
+				"Full_scan":         true,
 				"Filesort_on_disk":  false,
 				"Full_join":         false,
 				"Tmp_table_on_disk": false,
@@ -291,6 +293,7 @@ SET    biz = '91848182522'`,
 				"Lock_time":            0.000027,
 				"InnoDB_rec_lock_wait": 0.000000,
 				"InnoDB_queue_wait":    0.000000,
+				"InnoDB_IO_r_wait":     0.000000,
 			},
 			NumberMetrics: map[string]uint64{
 				"InnoDB_IO_r_bytes":     0,
@@ -300,7 +303,6 @@ SET    biz = '91848182522'`,
 				"Thread_id":             10,
 				"Rows_examined":         0,
 				"InnoDB_IO_r_ops":       0,
-				"InnoDB_IO_r_wait":      0.000000,
 			},
 			BoolMetrics: map[string]bool{
 				"Filesort":          false,

@@ -14,7 +14,7 @@ var sample = os.Getenv("GOPATH") + "/src/github.com/percona/percona-go-mysql/tes
 
 func ParseSlowLog(filename string) *[]log.Event {
 	file, err := os.Open(sample + filename)
-	p := parser.NewSlowLogParser(file, false)
+	p := parser.NewSlowLogParser(file, false) // false=debug off
 	if err != nil {
 		l.Fatal(err)
 	}
@@ -76,10 +76,16 @@ func (checker *eventsChecker) Check(params []interface{}, names []string) (resul
 						i,  gotEvent.Type().Field(j).Name, gotVal.String(), expectVal.String())
 					return false, err
 				}
-			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 				if gotVal.Int() != expectVal.Int() {
 					err := fmt.Sprintf("event %d field %s:\n     got: %d\nexpected: %d\n",
 						i,  gotEvent.Type().Field(j).Name, gotVal.Int(), expectVal.Int())
+					return false, err
+				}
+			case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+				if gotVal.Uint() != expectVal.Uint() {
+					err := fmt.Sprintf("event %d field %s:\n     got: %d\nexpected: %d\n",
+						i,  gotEvent.Type().Field(j).Name, gotVal.Uint(), expectVal.Uint())
 					return false, err
 				}
 			case reflect.Bool:
@@ -89,7 +95,9 @@ func (checker *eventsChecker) Check(params []interface{}, names []string) (resul
 					return false, err
 				}
 			case reflect.Map:
-				if equal, err := checkEventMaps(gotVal, expectVal); !equal {
+				if equal, mapErr := checkEventMaps(gotVal, expectVal); !equal {
+					err := fmt.Sprintf("event %d field %s %s",
+						i,  gotEvent.Type().Field(j).Name, mapErr)
 					return false, err
 				}
 			default:
@@ -106,31 +114,90 @@ func (checker *eventsChecker) Check(params []interface{}, names []string) (resul
 }
 
 func checkEventMaps(gotMap reflect.Value, expectMap reflect.Value) (bool, string) {
-	// @fixme get type of value, not type of key
-	keyType := expectMap.Type().Key().Kind()
-	fmt.Println(keyType)
+	// Get all keys in the expected map.  If there aren't any, check that
+	// there also aren't any in the got map.
 	keys := expectMap.MapKeys()
+	if len(keys) == 0 {
+		gotKeys := gotMap.MapKeys()
+		if len(gotKeys) != 0 {
+			err := fmt.Sprintf("     got: %s values\nexpected: no %s values\n", gotKeys[0], gotKeys[0])
+			return false, err
+		}
+		return true, ""  // no keys or values in either map
+	}
+
+	// Get the type of values in this map.
+	valueType := expectMap.MapIndex(keys[0]).Type().Kind()
+
+	// For key in the map, compare the got and expected values...
 	for _, key := range keys {
-		switch keyType {
+		expectValue := expectMap.MapIndex(key)
+		gotValue := gotMap.MapIndex(key)
+
+		/*
+		 * Check gotValue.IsValid() first: this returns true if the value is defined.
+		 * We know the expect value is defined because it's in the map we're iterating,
+		 * but the got value may not be defined (i.e. is not "valid"--IsValid() is
+		 * poorly named; IsDefined() would be better imho).  This avoids a panic like
+		 * "called gotValue.Float() on zero Value".
+		 */
+
+		switch valueType {
 		case reflect.Float32, reflect.Float64:
-			if gotMap.MapIndex(key).Float() != expectMap.MapIndex(key).Float() {
-				err := fmt.Sprintf("key %s:    got: %f\nexpected: %f\n",
-					key, gotMap.MapIndex(key).Float(), expectMap.MapIndex(key).Float())
+			if gotValue.IsValid() {
+				if gotValue.Float() != expectValue.Float() {
+					err := fmt.Sprintf("key %s:\n     got: %f\nexpected: %f\n",
+						key, gotValue.Float(), expectValue.Float())
+					return false, err
+				}
+			} else {
+				err := fmt.Sprintf("key %s:\n     got: undef\nexpected: %f\n",
+					key, expectValue.Float())
 				return false, err
 			}
 		case reflect.Bool:
-			if gotMap.MapIndex(key).Bool() != expectMap.MapIndex(key).Bool() {
-				err := fmt.Sprintf("key %s:    got: %t\nexpected: %t\n",
-					key, gotMap.MapIndex(key).Bool(), expectMap.MapIndex(key).Bool())
+			if gotValue.IsValid() {
+				if gotValue.Bool() != expectValue.Bool() {
+					err := fmt.Sprintf("key %s:\n     got: %t\nexpected: %t\n",
+						key, gotValue.Bool(), expectValue.Bool())
+					return false, err
+				}
+			} else {
+				err := fmt.Sprintf("key %s:\n     got: undef\nexpected: %t\n",
+					key, expectValue.Bool())
+				return false, err
+			}
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			if gotValue.IsValid() {
+				if gotValue.Int() != expectValue.Int() {
+					err := fmt.Sprintf("key %s:\n     got: %d\nexpected: %d\n",
+						key, gotValue.Int(), expectValue.Int())
+					return false, err
+				}
+			} else {
+				err := fmt.Sprintf("key %s:\n     got: undef\nexpected: %d\n",
+					key, expectValue.Int())
+				return false, err
+			}
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			if gotValue.IsValid() {
+				if gotValue.Uint() != expectValue.Uint() {
+					err := fmt.Sprintf("key %s:\n     got: %d\nexpected: %d\n",
+						key, gotValue.Uint(), expectValue.Uint())
+					return false, err
+				}
+			} else {
+				err := fmt.Sprintf("key %s:\n     got: undef\nexpected: %d\n",
+					key, expectValue.Uint())
 				return false, err
 			}
 		default:
-			if gotMap.MapIndex(key).Int() != expectMap.MapIndex(key).Int() {
-				err := fmt.Sprintf("key %s:    got: %d\nexpected: %d\n",
-					key, gotMap.MapIndex(key).Int(), expectMap.MapIndex(key).Int())
-				return false, err
-			}
+			// If this happens, we need to add a new case ^ to handle the data type.
+            err := fmt.Sprintf("checkEventMaps cannot handle type %s", valueType)
+			return false, err
 		}
 	}
+
+	// No differenes; the maps are identical (or there's a bug in this func).
 	return true, ""
 }
