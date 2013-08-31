@@ -102,8 +102,14 @@ func (p *SlowLogParser) parseHeader(line string) {
 		}
 		m := p.timeRe.FindStringSubmatch(line)
 		p.event.Ts = m[1]
-		// @todo handle this buggy input:
-		// # Time: 071218 11:48:27 # User@Host: [SQL_SLAVE] @  []
+		if p.userRe.MatchString(line) {
+			if p.debug { // @debug
+				l.Println("user (bad format)")
+			}
+			m := p.userRe.FindStringSubmatch(line)
+			p.event.User = m[1]
+			p.event.Host = m[2]
+		}
 	} else if strings.HasPrefix(line, "# User") {
 		if p.debug { // @debug
 			l.Println("user")
