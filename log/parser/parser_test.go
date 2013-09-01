@@ -40,6 +40,7 @@ func (s *SlowLogTestSuite) TestParserSlowLog001(t *C) {
 			User:  "root",
 			Host:  "localhost",
 			Db:    "test",
+			Offset: 200,
 			TimeMetrics: map[string]float32{
 				"Query_time": 2,
 				"Lock_time":  0,
@@ -57,6 +58,7 @@ func (s *SlowLogTestSuite) TestParserSlowLog001(t *C) {
 			User:  "root",
 			Host:  "localhost",
 			Db:    "sakila",
+			Offset: 359,
 			TimeMetrics: map[string]float32{
 				"Query_time": 2,
 				"Lock_time":  0,
@@ -81,6 +83,7 @@ func (s *SlowLogTestSuite) TestParseSlowLog002(t *C) {
 			Admin: false,
 			User:  "[SQL_SLAVE]",
 			Host:  "",
+			Offset: 0,
 			TimeMetrics: map[string]float32{
 				"Query_time": 0.000012,
 				"Lock_time":  0.000000,
@@ -109,6 +112,7 @@ func (s *SlowLogTestSuite) TestParseSlowLog002(t *C) {
 			Admin: false,
 			User:  "[SQL_SLAVE]",
 			Host:  "",
+			Offset: 338,
 			TimeMetrics: map[string]float32{
 				"Query_time": 0.726052,
 				"Lock_time":  0.000091,
@@ -135,6 +139,7 @@ VALUES ('', 'Exact')`,
 			Admin: false,
 			User:  "[SQL_SLAVE]",
 			Host:  "",
+			Offset: 815,
 			TimeMetrics: map[string]float32{
 				"InnoDB_queue_wait":    0.000000,
 				"Lock_time":            0.000077,
@@ -168,6 +173,7 @@ WHERE  vab3concept1upload='6994465'`,
 			Admin: false,
 			User:  "[SQL_SLAVE]",
 			Host:  "",
+			Offset: 1334,
 			TimeMetrics: map[string]float32{
 				"Query_time":           0.033384,
 				"InnoDB_IO_r_wait":     0.000000,
@@ -200,6 +206,7 @@ VALUES ('211', '18')`,
 			Admin: false,
 			User:  "[SQL_SLAVE]",
 			Host:  "",
+			Offset: 1864,
 			TimeMetrics: map[string]float32{
 				"InnoDB_queue_wait":    0.000000,
 				"Query_time":           0.000530,
@@ -232,6 +239,7 @@ SET    biz = '91848182522'`,
 			Admin: false,
 			User:  "[SQL_SLAVE]",
 			Host:  "",
+			Offset: 2393,
 			TimeMetrics: map[string]float32{
 				"Lock_time":            0.000027,
 				"InnoDB_rec_lock_wait": 0.000000,
@@ -265,6 +273,7 @@ WHERE  fillze='899'`,
 			Admin: false,
 			User:  "[SQL_SLAVE]",
 			Host:  "",
+			Offset: 2861,
 			TimeMetrics: map[string]float32{
 				"Query_time":           0.000530,
 				"InnoDB_IO_r_wait":     0.000000,
@@ -297,6 +306,7 @@ SET    biz = '91848182522'`,
 			Admin: false,
 			User:  "[SQL_SLAVE]",
 			Host:  "",
+			Offset: 3374,
 			TimeMetrics: map[string]float32{
 				"Query_time":           0.000530,
 				"Lock_time":            0.000027,
@@ -337,6 +347,7 @@ func (s *SlowLogTestSuite) TestParserSlowLog003(t *C) {
 			Host:  "",
 			Ts:    "071218 11:48:27",
 			User:  "[SQL_SLAVE]",
+			Offset: 2,
 			BoolMetrics: map[string]bool{
 				"Filesort_on_disk":  false,
 				"Tmp_table_on_disk": false,
@@ -371,6 +382,7 @@ func (s *SlowLogTestSuite) TestParserSlowLog004(t *C) {
 			Host:  "localhost",
 			Ts:    "071015 21:43:52",
 			User:  "root",
+			Offset: 200,
 			BoolMetrics: map[string]bool{
 			},
 			TimeMetrics: map[string]float32{
@@ -402,6 +414,7 @@ func (s *SlowLogTestSuite) TestParserSlowLog005(t *C) {
 			Host:  "",
 			Ts:    "071218 11:48:27",
 			User:  "[SQL_SLAVE]",
+			Offset: 0,
 			BoolMetrics: map[string]bool{
 				"Filesort_on_disk":  false,
 				"Tmp_table_on_disk": false,
@@ -438,6 +451,7 @@ func (s *SlowLogTestSuite) TestParserSlowLog006(t *C) {
 			Host:  "",
 			Ts:    "071218 11:48:27",
 			User:  "[SQL_SLAVE]",
+			Offset: 0,
 			BoolMetrics: map[string]bool{
 				"Filesort_on_disk":  false,
 				"Tmp_table_on_disk": false,
@@ -465,6 +479,7 @@ func (s *SlowLogTestSuite) TestParserSlowLog006(t *C) {
 			Host:  "",
 			Ts:    "071218 11:48:57",
 			User:  "[SQL_SLAVE]",
+			Offset: 369,
 			BoolMetrics: map[string]bool{
 				"Filesort_on_disk":  false,
 				"Tmp_table_on_disk": false,
@@ -492,6 +507,7 @@ func (s *SlowLogTestSuite) TestParserSlowLog006(t *C) {
 			Host:  "",
 			Ts:    "071218 11:48:57",
 			User:  "[SQL_SLAVE]",
+			Offset: 737,
 			BoolMetrics: map[string]bool{
 				"Filesort_on_disk":  false,
 				"Tmp_table_on_disk": false,
@@ -519,6 +535,7 @@ func (s *SlowLogTestSuite) TestParserSlowLog006(t *C) {
 			Host:  "",
 			Ts:    "071218 11:49:05",
 			User:  "[SQL_SLAVE]",
+			Offset: 1101,
 			BoolMetrics: map[string]bool{
 				"Filesort_on_disk":  false,
 				"Tmp_table_on_disk": false,
@@ -546,6 +563,7 @@ func (s *SlowLogTestSuite) TestParserSlowLog006(t *C) {
 			Host:  "",
 			Ts:    "071218 11:49:07",
 			User:  "[SQL_SLAVE]",
+			Offset: 1469,
 			BoolMetrics: map[string]bool{
 				"Filesort_on_disk":  false,
 				"Tmp_table_on_disk": false,
@@ -573,6 +591,7 @@ func (s *SlowLogTestSuite) TestParserSlowLog006(t *C) {
 			Host:  "",
 			Ts:    "071218 11:49:30",
 			User:  "[SQL_SLAVE]",
+			Offset: 1833,
 			BoolMetrics: map[string]bool{
 				"Filesort_on_disk":  false,
 				"Tmp_table_on_disk": false,
@@ -608,6 +627,7 @@ func (s *SlowLogTestSuite) TestParserSlowLog007(t *C) {
 			Host:  "",
 			Ts:    "071218 11:48:27",
 			User:  "[SQL_SLAVE]",
+			Offset: 0,
 			BoolMetrics: map[string]bool{
 			},
 			TimeMetrics: map[string]float32{
@@ -639,6 +659,7 @@ func (s *SlowLogTestSuite) TestParserSlowLog008(t *C) {
 			Admin: true,
 			Host:  "",
 			User:  "meow",
+			Offset: 0,
 			BoolMetrics: map[string]bool{
 			},
 			TimeMetrics: map[string]float32{
@@ -657,6 +678,7 @@ func (s *SlowLogTestSuite) TestParserSlowLog008(t *C) {
 			Admin: false,
 			Host:  "",
 			User:  "meow",
+			Offset: 221,
 			BoolMetrics: map[string]bool{
 			},
 			TimeMetrics: map[string]float32{
@@ -675,6 +697,7 @@ func (s *SlowLogTestSuite) TestParserSlowLog008(t *C) {
 			Admin: false,
 			Host:  "",
 			User:  "meow",
+			Offset: 435,
 			BoolMetrics: map[string]bool{
 			},
 			TimeMetrics: map[string]float32{

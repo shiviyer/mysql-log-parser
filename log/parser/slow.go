@@ -19,7 +19,10 @@ type SlowLogParser struct {
 	EventChan chan *log.Event
 	inHeader bool
 	inQuery bool
-	queryLines uint
+	headerLines uint
+	queryLines uint64
+	bytesRead uint64
+	lineOffset uint64
 	event *log.Event
 	timeRe *regexp.Regexp
 	userRe *regexp.Regexp
@@ -42,7 +45,10 @@ func NewSlowLogParser(file *os.File, debug bool) *SlowLogParser {
 		EventChan: make(chan *log.Event),
 		inHeader: false,
 		inQuery: false,
+		headerLines: 0,
 		queryLines: 0,
+		bytesRead: 0,
+		lineOffset: 0,
 		event: log.NewEvent(),
 		timeRe: regexp.MustCompile(`Time: (\S+\s{1,2}\S+)`),
 		userRe: regexp.MustCompile(`User@Host: ([^\[]+|\[[^[]+\]).*?@ (\S*) \[(.*)\]`),
@@ -56,9 +62,19 @@ func NewSlowLogParser(file *os.File, debug bool) *SlowLogParser {
 func (p *SlowLogParser) Run() {
 	for p.scanner.Scan() {
 		line := p.scanner.Text()
+
+		lineLen := uint64(len(line)) + 1  // +1 for \n
+		p.bytesRead += lineLen
+		p.lineOffset = p.bytesRead - lineLen
+		if p.lineOffset != 0 {
+			// @todo Need to get clear on why this is needed;
+			// it does make the value correct; an off-by-one issue
+			p.lineOffset += 1
+		}
+
 		if p.debug { // @debug
 			fmt.Println()
-			l.Println("line: " + line)
+			l.Printf("+%d line: %s", p.lineOffset, line)
 		}
 		if p.inHeader {
 			p.parseHeader(line)
@@ -101,6 +117,11 @@ func (p *SlowLogParser) parseHeader(line string) {
 		p.parseQuery(line)
 		return
 	}
+
+	if p.headerLines == 0 {
+		p.event.Offset = p.lineOffset
+	}
+	p.headerLines++
 
 	if strings.HasPrefix(line, "# Time") {
 		if p.debug { // @debug
@@ -209,6 +230,7 @@ func (p *SlowLogParser) sendEvent(inHeader bool, inQuery bool) {
 
 	// Make a new event and reset our metadata.
 	p.event = log.NewEvent()
+	p.headerLines = 0
 	p.queryLines = 0
 	p.inHeader = inHeader
 	p.inQuery = inQuery

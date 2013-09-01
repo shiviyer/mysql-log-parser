@@ -1,7 +1,7 @@
 package log
 
 type Event struct {
-	Offset int64  // byte offset in log file, start of event
+	Offset uint64 // byte offset in log file, start of event
 	Ts string     // if present in log file, often times not
 	Admin bool    // Query is admin command not SQL query
 	Query string  // SQL query or admin command
