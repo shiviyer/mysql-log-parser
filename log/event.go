@@ -11,7 +11,8 @@ var limitRe *regexp.Regexp = regexp.MustCompile(`\blimit \?(?:, ?\?| offset \?)?
 var escapedQuoteRe *regexp.Regexp = regexp.MustCompile(`\\["']`)
 var doubleQuotedValRe *regexp.Regexp = regexp.MustCompile(`".*?"`)
 var singleQuotedValRe *regexp.Regexp = regexp.MustCompile(`'.*?'`)
-var numberRe *regexp.Regexp = regexp.MustCompile(`\b[0-9+-][0-9a-f.xb+-]*`)
+var number1Re *regexp.Regexp = regexp.MustCompile(`\b[0-9+-][0-9a-f.xb+-]*`)
+var number2Re *regexp.Regexp = regexp.MustCompile(`[xb.+-]\?`)
 var valueListRe *regexp.Regexp = regexp.MustCompile(`\b(in|values?)(?:[\s,]*\([\s?,]*\))+`)
 var multiLineCommentRe *regexp.Regexp = regexp.MustCompile(`(?sm)/\*[^!].*?\*/`)
 // Go re doesn't support ?=, but I don't think slow logs can have -- comments,
@@ -19,6 +20,8 @@ var multiLineCommentRe *regexp.Regexp = regexp.MustCompile(`(?sm)/\*[^!].*?\*/`)
 //var oneLineCommentRe *regexp.Regexp = regexp.MustCompile(`(?:--|#)[^'"\r\n]*(?=[\r\n]|\z)`)
 var useDbRe *regexp.Regexp = regexp.MustCompile(`\Ause .+\z`)
 var unionRe *regexp.Regexp = regexp.MustCompile(`\b(select\s.*?)(?:(\sunion(?:\sall)?)\s$1)+`)
+var adminCmdRe *regexp.Regexp = regexp.MustCompile(`\Aadministrator command: `)
+var storedProcRe *regexp.Regexp = regexp.MustCompile(`(?i)\A\s*(call\s+\S+)\(`)
 
 type Event struct {
 	Offset uint64 // byte offset in log file, start of event
@@ -49,27 +52,35 @@ func StripComments(q string) string {
 }
 
 func QueryClass(q string) string {
-	q = StripComments(q)
-	q = strings.TrimSpace(q)
-	q = spaceRe.ReplaceAllString(q, " ")
-
+	// First check for special case that shouldn't need any further processing.
 	if useDbRe.MatchString(q) {
 		return "use ?"
+	} else if adminCmdRe.MatchString(q) {
+		return q
+	} else if storedProcRe.MatchString(q) {
+		m := storedProcRe.FindStringSubmatch(q)
+		return strings.ToLower(m[1])
 	}
 
+	// Strip the fluff.
+	q = StripComments(q)
+	q = strings.TrimSpace(q)
+
+	// Do case-insensitive replacements
+	q = spaceRe.ReplaceAllString(q, " ")
 	q = escapedQuoteRe.ReplaceAllString(q, "")
 	q = doubleQuotedValRe.ReplaceAllString(q, "?")
 	q = singleQuotedValRe.ReplaceAllString(q, "?")
-	q = numberRe.ReplaceAllString(q, "?")
+	// @todo Are 2 passes really necessary?
+	q = number1Re.ReplaceAllString(q, "?")
+	q = number2Re.ReplaceAllString(q, "?")
 
-	q = valueListRe.ReplaceAllString(q, "$1(?+)")
-	q = unionRe.ReplaceAllString(q, "$1 /*repeat$2*/")
-
+	// Lowercase the query then do case-sensitive replacements
 	q = strings.ToLower(q)
-
-	// Must replace these after strings.ToLower().
-	q = nullRe.ReplaceAllString(q, "?")
-	q = limitRe.ReplaceAllString(q, "limit ?")
+	q = valueListRe.ReplaceAllString(q, "$1(?+)") // in|value (...) -> in|value (?+)
+	q = unionRe.ReplaceAllString(q, "$1 /*repeat$2*/") // @todo
+	q = nullRe.ReplaceAllString(q, "?") // null -> ?
+	q = limitRe.ReplaceAllString(q, "limit ?") // limit N -> limit ?
 
 	return q
 }
