@@ -1,5 +1,12 @@
 package log
 
+import (
+	"strings"
+	"regexp"
+)
+
+var spacesRe *regexp.Regexp = regexp.MustCompile(`\s+`)
+
 type Event struct {
 	Offset uint64 // byte offset in log file, start of event
 	Ts string     // if present in log file, often times not
@@ -19,6 +26,12 @@ func NewEvent() *Event {
 	event.NumberMetrics = make(map[string]uint64)
 	event.BoolMetrics = make(map[string]bool)
 	return event
+}
+
+func QueryClass(q string) string {
+	q = strings.TrimSpace(q)
+	q = spacesRe.ReplaceAllString(q, " ")
+	return q
 }
 
 type EventDescription struct {
