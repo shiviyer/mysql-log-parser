@@ -24,6 +24,7 @@ func (s *QueryClassTestSuite) TestQueryClass(t *C) {
 	var q string
 	var f string
 
+	// A most basic case
 	q = "SELECT c FROM t WHERE id=1"
 	f = "select c from t where id=?"
 	t.Check(
@@ -45,7 +46,7 @@ func (s *QueryClassTestSuite) TestQueryClass(t *C) {
 	t.Check(
 		log.QueryClass(q),
 		Equals,
-		"mysqldump",
+		"select * from `film`",
 	)
 
 	// Fingerprints stored procedure calls specially
@@ -62,30 +63,6 @@ func (s *QueryClassTestSuite) TestQueryClass(t *C) {
 		log.QueryClass(q),
 		Equals,
 		"administrator command: Init DB",
-	)
-
-	// Fingerprints mk-table-checksum queries together
-	q = "REPLACE /*foo.bar:3/3*/ INTO checksum.checksum (db, tbl, " +
-	    "chunk, boundaries, this_cnt, this_crc) SELECT 'foo', 'bar', " +
-	    "2 AS chunk_num, '`id` >= 2166633', COUNT(*) AS cnt, " +
-	    "LOWER(CONV(BIT_XOR(CAST(CRC32(CONCAT_WS('#', `id`, `created_by`, " +
-	    "`created_date`, `updated_by`, `updated_date`, `ppc_provider`, " +
-	    "`account_name`, `provider_account_id`, `campaign_name`, " +
-	    "`provider_campaign_id`, `adgroup_name`, `provider_adgroup_id`, " +
-	    "`provider_keyword_id`, `provider_ad_id`, `foo`, `reason`, " +
-	    "`foo_bar_bazz_id`, `foo_bar_baz`, CONCAT(ISNULL(`created_by`), " +
-	    "ISNULL(`created_date`), ISNULL(`updated_by`), ISNULL(`updated_date`), " +
-	    "ISNULL(`ppc_provider`), ISNULL(`account_name`), " +
-	    "ISNULL(`provider_account_id`), ISNULL(`campaign_name`), " +
-	    "ISNULL(`provider_campaign_id`), ISNULL(`adgroup_name`), " +
-	    "ISNULL(`provider_adgroup_id`), ISNULL(`provider_keyword_id`), " +
-	    "ISNULL(`provider_ad_id`), ISNULL(`foo`), ISNULL(`reason`), " +
-	    "ISNULL(`foo_base_foo_id`), ISNULL(`fooe_foo_id`)))) AS UNSIGNED)), 10, 16)) AS crc " +
-	    "FROM `foo`.`bar` USE INDEX (`PRIMARY`) WHERE  `id` >= 2166633)"
-	t.Check(
-		log.QueryClass(q),
-		Equals,
-		"percona-toolkit",
 	)
 
 	// Removes identifier from USE

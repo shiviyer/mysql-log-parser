@@ -5,7 +5,20 @@ import (
 	"regexp"
 )
 
-var spacesRe *regexp.Regexp = regexp.MustCompile(`\s+`)
+var spaceRe *regexp.Regexp = regexp.MustCompile(`\s+`)
+var nullRe *regexp.Regexp = regexp.MustCompile(`\bnull\b`)
+var limitRe *regexp.Regexp = regexp.MustCompile(`\blimit \?(?:, ?\?| offset \?)?`)
+var escapedQuoteRe *regexp.Regexp = regexp.MustCompile(`\\["']`)
+var doubleQuotedValRe *regexp.Regexp = regexp.MustCompile(`".*?"`)
+var singleQuotedValRe *regexp.Regexp = regexp.MustCompile(`'.*?'`)
+var numberRe *regexp.Regexp = regexp.MustCompile(`\b[0-9+-][0-9a-f.xb+-]*`)
+var valueListRe *regexp.Regexp = regexp.MustCompile(`\b(in|values?)(?:[\s,]*\([\s?,]*\))+`)
+var multiLineCommentRe *regexp.Regexp = regexp.MustCompile(`(?sm)/\*[^!].*?\*/`)
+// Go re doesn't support ?=, but I don't think slow logs can have -- comments,
+// so we don't need this for now
+//var oneLineCommentRe *regexp.Regexp = regexp.MustCompile(`(?:--|#)[^'"\r\n]*(?=[\r\n]|\z)`)
+var useDbRe *regexp.Regexp = regexp.MustCompile(`\Ause .+\z`)
+var unionRe *regexp.Regexp = regexp.MustCompile(`\b(select\s.*?)(?:(\sunion(?:\sall)?)\s$1)+`)
 
 type Event struct {
 	Offset uint64 // byte offset in log file, start of event
@@ -28,9 +41,36 @@ func NewEvent() *Event {
 	return event
 }
 
+func StripComments(q string) string {
+	// @todo See comment above
+	// q = oneLineCommentRe.ReplaceAllString(q, "")
+	q = multiLineCommentRe.ReplaceAllString(q, "")
+	return q
+}
+
 func QueryClass(q string) string {
+	q = StripComments(q)
 	q = strings.TrimSpace(q)
-	q = spacesRe.ReplaceAllString(q, " ")
+	q = spaceRe.ReplaceAllString(q, " ")
+
+	if useDbRe.MatchString(q) {
+		return "use ?"
+	}
+
+	q = escapedQuoteRe.ReplaceAllString(q, "")
+	q = doubleQuotedValRe.ReplaceAllString(q, "?")
+	q = singleQuotedValRe.ReplaceAllString(q, "?")
+	q = numberRe.ReplaceAllString(q, "?")
+
+	q = valueListRe.ReplaceAllString(q, "$1(?+)")
+	q = unionRe.ReplaceAllString(q, "$1 /*repeat$2*/")
+
+	q = strings.ToLower(q)
+
+	// Must replace these after strings.ToLower().
+	q = nullRe.ReplaceAllString(q, "?")
+	q = limitRe.ReplaceAllString(q, "limit ?")
+
 	return q
 }
 
