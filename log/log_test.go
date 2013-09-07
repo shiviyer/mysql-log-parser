@@ -430,7 +430,7 @@ var _ = Suite(&EventStatsTestSuite{})
 
 func (s *EventStatsTestSuite) TestEventStats(t *C) {
 	stats := log.NewEventStats()
-	events := testlog.ParseSlowLog("slow001.log")
+	events := testlog.ParseSlowLog("slow001.log", false)
 	for _, e := range *events {
 		stats.Add(&e)
 	}

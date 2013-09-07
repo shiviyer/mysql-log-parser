@@ -2,6 +2,7 @@ package testlog
 
 import (
 	"os"
+	"os/exec"
 	"fmt"
 	l "log"
 	"reflect"
@@ -12,9 +13,9 @@ import (
 
 var Sample = os.Getenv("GOPATH") + "/src/github.com/percona/percona-go-mysql/test/logs/"
 
-func ParseSlowLog(filename string) *[]log.Event {
+func ParseSlowLog(filename string, debug bool) *[]log.Event {
 	file, err := os.Open(Sample + filename)
-	p := parser.NewSlowLogParser(file, false) // false=debug off
+	p := parser.NewSlowLogParser(file, debug)
 	if err != nil {
 		l.Fatal(err)
 	}
@@ -305,5 +306,28 @@ func checkStructs(gotStruct reflect.Value, expectStruct reflect.Value) (bool, st
 		}
 	}
 
+	return true, ""
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// FileEqual
+/////////////////////////////////////////////////////////////////////////////
+
+type fileChecker struct {
+	*gocheck.CheckerInfo
+}
+
+var FileEquals gocheck.Checker = &fileChecker{
+	&gocheck.CheckerInfo{Name: "FileEquals", Params: []string{"got", "expected"}},
+}
+
+func (checker *fileChecker) Check(params []interface{}, names []string) (result bool, error string) {
+	gotFile := reflect.ValueOf(params[0])
+	expectFile := reflect.ValueOf(params[1])
+	cmd := exec.Command("diff", "-u", gotFile.String(), expectFile.String())
+	diff, err := cmd.CombinedOutput()
+	if err != nil {
+		return false, string(diff)
+	}
 	return true, ""
 }
