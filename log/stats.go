@@ -1,6 +1,6 @@
 package log
 
-type ClassStats struct {
+type EventStats struct {
 	TimeMetrics map[string]TimeStats
 	NumberMetrics map[string]NumberStats
 	BoolMetrics map[string]BoolStats
@@ -27,7 +27,16 @@ type BoolStats struct {
 	True uint8
 }
 
-func (s *ClassStats) Add(e *Event) {
+func NewEventStats() *EventStats {
+	s := &EventStats{
+		TimeMetrics: make(map[string]TimeStats),
+		NumberMetrics: make(map[string]NumberStats),
+		BoolMetrics: make(map[string]BoolStats),
+	}
+	return s
+}
+
+func (s *EventStats) Add(e *Event) {
 	for key, val := range e.TimeMetrics {
 		m := s.TimeMetrics[key]
 		m.Cnt++

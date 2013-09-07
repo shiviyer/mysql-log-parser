@@ -60,6 +60,8 @@ func NewSlowLogParser(file *os.File, debug bool) *SlowLogParser {
 }
 
 func (p *SlowLogParser) Run() {
+	defer close(p.EventChan)
+
 	for p.scanner.Scan() {
 		line := p.scanner.Text()
 
@@ -86,10 +88,15 @@ func (p *SlowLogParser) Run() {
 			p.parseHeader(line)
 		}
 	}
+
 	if p.queryLines > 0 {
 		p.sendEvent(false, false)
 	}
-	close(p.EventChan)
+
+	if p.debug { // @debug
+		fmt.Println()
+		l.Printf("done")
+	}
 }
 
 func (p *SlowLogParser) IsMetaLine(line string) bool {

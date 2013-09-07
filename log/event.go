@@ -1,8 +1,11 @@
 package log
 
 import (
+	"fmt"
+	"io"
 	"strings"
 	"regexp"
+	"crypto/md5"
 )
 
 var spaceRe *regexp.Regexp = regexp.MustCompile(`\s+`)
@@ -51,7 +54,7 @@ func StripComments(q string) string {
 	return q
 }
 
-func QueryClass(q string) string {
+func Fingerprint(q string) string {
 	// First check for special case that shouldn't need any further processing.
 	if useDbRe.MatchString(q) {
 		return "use ?"
@@ -85,8 +88,9 @@ func QueryClass(q string) string {
 	return q
 }
 
-type EventDescription struct {
-	Class string  // fingerprint of Query
-	Id uint32     // CRC32 checksum of Class
-	Alias string  // very short form of Query (distill)
+func Checksum(className string) string {
+	id := md5.New()
+	io.WriteString(id, className)
+	h := fmt.Sprintf("%x", id.Sum(nil))
+	return strings.ToUpper(h[16:32])
 }
