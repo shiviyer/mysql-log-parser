@@ -1,9 +1,9 @@
 package log
 
 type EventStats struct {
-	TimeMetrics map[string]TimeStats
-	NumberMetrics map[string]NumberStats
-	BoolMetrics map[string]BoolStats
+	TimeMetrics map[string]*TimeStats `json:",omitempty"`
+	NumberMetrics map[string]*NumberStats `json:",omitempty"`
+	BoolMetrics map[string]*BoolStats `json:",omitempty"`
 }
 
 type TimeStats struct {
@@ -29,41 +29,87 @@ type BoolStats struct {
 
 func NewEventStats() *EventStats {
 	s := &EventStats{
-		TimeMetrics: make(map[string]TimeStats),
-		NumberMetrics: make(map[string]NumberStats),
-		BoolMetrics: make(map[string]BoolStats),
+		TimeMetrics: make(map[string]*TimeStats),
+		NumberMetrics: make(map[string]*NumberStats),
+		BoolMetrics: make(map[string]*BoolStats),
 	}
 	return s
 }
 
 func (s *EventStats) Add(e *Event) {
-	for key, val := range e.TimeMetrics {
-		m := s.TimeMetrics[key]
-		m.Cnt++
-		m.Sum += val
-		if val < m.Min {
-			m.Min = val
-		}
-		if val > m.Max {
-			m.Max = val
+	for metric, val := range e.TimeMetrics {
+		stats, seenMetric := s.TimeMetrics[metric]
+		if seenMetric {
+			// We've seen this metric before; update its stats.
+			stats.Cnt++
+			stats.Sum += val
+			if val < stats.Min {
+				stats.Min = val
+			}
+			if val > stats.Max {
+				stats.Max = val
+			}
+		} else {
+			// First time we've seen this metric; create its stats.
+			s.TimeMetrics[metric] = &TimeStats{
+				Cnt: 1,
+				Sum: val,
+				Min: val,
+				Max: val,
+			}
 		}
 	}
-	for key, val := range e.NumberMetrics {
-		m := s.NumberMetrics[key]
-		m.Cnt++
-		m.Sum += val
-		if val < m.Min {
-			m.Min = val
-		}
-		if val > m.Max {
-			m.Max = val
+	for metric, val := range e.NumberMetrics {
+		stats, seenMetric := s.NumberMetrics[metric]
+		if seenMetric {
+			// We've seen this metric before; update its stats.
+			stats.Cnt++
+			stats.Sum += val
+			if val < stats.Min {
+				stats.Min = val
+			}
+			if val > stats.Max {
+				stats.Max = val
+			}
+		} else {
+			// First time we've seen this metric; create its stats.
+			s.NumberMetrics[metric] = &NumberStats{
+				Cnt: 1,
+				Sum: val,
+				Min: val,
+				Max: val,
+			}
 		}
 	}
-	for key, val := range e.BoolMetrics {
-		m := s.BoolMetrics[key]
-		m.Cnt++
-		if val {
-			m.True++
+	for metric, val := range e.BoolMetrics {
+		stats, seenMetric := s.BoolMetrics[metric]
+		if seenMetric {
+			// We've seen this metric before; update its stats.
+			stats.Cnt++
+			if val {
+				stats.True++
+			}
+		} else {
+			// First time we've seen this metric; create its stats.
+			stats := &BoolStats{
+				Cnt: 1,
+			}
+			if val {
+				stats.True++
+			}
+			s.BoolMetrics[metric] = stats
 		}
+	}
+}
+
+// Make the stats current because some values (e.g. average) change as events are added.
+// Call this function before accessing the stats, else some stats will be zero or incorrect.
+// @todo median, stddev, 95th percentile
+func (s *EventStats) Current() {
+	for _, stats := range s.TimeMetrics {
+		stats.Avg = stats.Sum / stats.Cnt
+	}
+	for _, stats := range s.NumberMetrics {
+		stats.Avg = stats.Sum / stats.Cnt
 	}
 }

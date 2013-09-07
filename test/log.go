@@ -10,10 +10,10 @@ import (
 	"launchpad.net/gocheck"
 )
 
-var sample = os.Getenv("GOPATH") + "/src/github.com/percona/percona-go-mysql/test/logs/"
+var Sample = os.Getenv("GOPATH") + "/src/github.com/percona/percona-go-mysql/test/logs/"
 
 func ParseSlowLog(filename string) *[]log.Event {
-	file, err := os.Open(sample + filename)
+	file, err := os.Open(Sample + filename)
 	p := parser.NewSlowLogParser(file, false) // false=debug off
 	if err != nil {
 		l.Fatal(err)
@@ -199,5 +199,111 @@ func checkEventMaps(gotMap reflect.Value, expectMap reflect.Value) (bool, string
 	}
 
 	// No differenes; the maps are identical (or there's a bug in this func).
+	return true, ""
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// StatsEqual
+/////////////////////////////////////////////////////////////////////////////
+
+type statsChecker struct {
+	*gocheck.CheckerInfo
+}
+
+var StatsEqual gocheck.Checker = &statsChecker{
+	&gocheck.CheckerInfo{Name: "StatsEqual", Params: []string{"got", "expected"}},
+}
+
+func (checker *statsChecker) Check(params []interface{}, names []string) (result bool, error string) {
+	// Dereference *log.EventStats params
+	got := reflect.ValueOf(params[0]).Elem()
+	expect := reflect.ValueOf(params[1]).Elem()
+
+	// For TimeMetrics, NumberMetrics, and BoolMetrics...
+	 for i := 0; i < expect.NumField(); i++ {
+		gotMetrics := got.Field(i)
+		expectMetrics := expect.Field(i)
+
+		keys := expectMetrics.MapKeys()
+		if len(keys) == 0 {
+			gotKeys := gotMetrics.MapKeys()
+			if len(gotKeys) != 0 {
+				err := fmt.Sprintf("     got: %s values\nexpected: no %s values\n", gotKeys[0], gotKeys[0])
+				return false, err
+			}
+			continue // no keys or values in either map
+		}
+
+		// Foreach metric in the XMetrics[metric]*TimeStats|*NumberStats|*BoolStats map...
+		for _, metric := range keys {
+			gotStat := gotMetrics.MapIndex(metric).Elem()
+			expectStat := expectMetrics.MapIndex(metric).Elem()
+			if equal, mapErr := checkStructs(gotStat, expectStat); !equal {
+				err := fmt.Sprintf("%s.%s.%s",
+					expect.Type().Field(i).Name, metric, mapErr)
+				return false, err
+			}
+		}
+	}
+
+	// No differences; all the events are identical (or there's a bug in this func).
+	return true, ""
+}
+
+func checkStructs(gotStruct reflect.Value, expectStruct reflect.Value) (bool, string) {
+	// For each field (key) in the expected struct...
+	for i := 0; i < expectStruct.NumField(); i++ {
+
+		// Get the value expected and got for the field.
+		expectVal := expectStruct.Field(i)
+		gotVal := gotStruct.Field(i)
+
+		// Compare the expected and got values based on their type,
+		// return immediate when a difference is found.
+		switch expectVal.Type().Kind() {
+		case reflect.String:
+			if gotVal.String() != expectVal.String() {
+				err := fmt.Sprintf("%s:\n     got: %s\nexpected: %s\n",
+					gotStruct.Type().Field(i).Name, gotVal.String(), expectVal.String())
+				return false, err
+			}
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			if gotVal.Int() != expectVal.Int() {
+				err := fmt.Sprintf("%s:\n     got: %d\nexpected: %d\n",
+					gotStruct.Type().Field(i).Name, gotVal.Int(), expectVal.Int())
+				return false, err
+			}
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			if gotVal.Uint() != expectVal.Uint() {
+				err := fmt.Sprintf("%s:\n     got: %d\nexpected: %d\n",
+					gotStruct.Type().Field(i).Name, gotVal.Uint(), expectVal.Uint())
+				return false, err
+			}
+		case reflect.Float32, reflect.Float64:
+			if gotVal.Float() != expectVal.Float() {
+				err := fmt.Sprintf("%s:\n     got: %f\nexpected: %f\n",
+					gotStruct.Type().Field(i).Name, gotVal.Float(), expectVal.Float())
+				return false, err
+			}
+		case reflect.Bool:
+			if gotVal.Bool() != expectVal.Bool() {
+				err := fmt.Sprintf("%s:\n     got: %t\nexpected: %t\n",
+					gotStruct.Type().Field(i).Name, gotVal.Bool(), expectVal.Bool())
+				return false, err
+			}
+		case reflect.Map:
+			if equal, mapErr := checkEventMaps(gotVal, expectVal); !equal {
+				err := fmt.Sprintf("%s %s",
+					gotStruct.Type().Field(i).Name, mapErr)
+				return false, err
+			}
+		default:
+			// If this happens, we need to add a new case ^ to handle the data type.
+			err := fmt.Sprintf("checkStructs cannot handle field %s type %s",
+				gotStruct.Type().Field(i).Name, expectVal.Type().Kind())
+			return false, err
+		}
+	}
+
 	return true, ""
 }

@@ -1,8 +1,9 @@
 package log_test
 
 import (
+//	"fmt"
 	"github.com/percona/percona-go-mysql/log"
-	//	. "github.com/percona/percona-go-mysql/test"
+	"github.com/percona/percona-go-mysql/test"
 	. "launchpad.net/gocheck"
 	"testing"
 )
@@ -416,4 +417,57 @@ func (s *ChecksumTestSuite) TestChecksum(t *C) {
 		Equals,
 		"93CB22BB8F5ACDC3",
 	)
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// Stats test suite
+// //////////////////////////////////////////////////////////////////////////
+
+type EventStatsTestSuite struct {
+}
+
+var _ = Suite(&EventStatsTestSuite{})
+
+func (s *EventStatsTestSuite) TestEventStats(t *C) {
+	stats := log.NewEventStats()
+	events := testlog.ParseSlowLog("slow001.log")
+	for _, e := range *events {
+		stats.Add(&e)
+	}
+	stats.Current()
+	expect := &log.EventStats{
+		TimeMetrics: map[string]*log.TimeStats{
+			"Lock_time": &log.TimeStats{
+			  Cnt: 2,
+			  Sum: 0,
+			  Min: 0,
+			  Max: 0,
+			  Avg: 0,
+			},
+			"Query_time": &log.TimeStats{
+			  Cnt: 2,
+			  Sum: 4,
+			  Min: 2,
+			  Max: 2,
+			  Avg: 2,
+			},
+		  },
+		  NumberMetrics: map[string]*log.NumberStats{
+			"Rows_examined": &log.NumberStats{
+			  Cnt: 2,
+			  Sum: 0,
+			  Min: 0,
+			  Max: 0,
+			  Avg: 0,
+			},
+			"Rows_sent": &log.NumberStats{
+			  Cnt: 2,
+			  Sum: 2,
+			  Min: 1,
+			  Max: 1,
+			  Avg: 1,
+			},
+		  },
+		}
+	t.Assert(stats, testlog.StatsEqual, expect)
 }
