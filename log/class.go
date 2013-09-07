@@ -1,24 +1,38 @@
 package log
 
+import (
+	"time"
+)
+
 /////////////////////////////////////////////////////////////////////////////
 // Global class
 /////////////////////////////////////////////////////////////////////////////
 
 type GlobalClass struct {
-	stats *EventStats
-	totalEvents uint64
+	startTs time.Time
+	endTs time.Time
+	TotalQueries uint64
+	UniqueQueriess uint64
+	Metrics *EventStats
 }
 
-func NewGlobalClass(event *Event) *GlobalClass {
+func NewGlobalClass() *GlobalClass {
 	class := &GlobalClass{
-		stats: NewEventStats(),
+		TotalQueries: 0,
+		UniqueQueriess: 0,
+		Metrics: NewEventStats(),
 	}
 	return class
 }
 
 func (c *GlobalClass) AddEvent(e *Event) {
-	c.totalEvents++
-	c.stats.Add(e)
+	c.TotalQueries++
+	c.Metrics.Add(e)
+}
+
+func (c *GlobalClass) Finalize(UniqueQueriess uint64) {
+	c.UniqueQueriess = UniqueQueriess
+	c.Metrics.Current()
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -28,24 +42,25 @@ func (c *GlobalClass) AddEvent(e *Event) {
 type QueryClass struct {
 	Id string
 	Fingerprint string
-	Distill string
-	stats *EventStats
-	totalEvents uint64
+	Metrics *EventStats
+	TotalQueries uint64
 }
 
 func NewQueryClass(classId string, fingerprint string) *QueryClass {
 	class := &QueryClass{
 		Id: classId,
 		Fingerprint: fingerprint,
-		Distill: "",
-		stats: NewEventStats(),
-		totalEvents: 0,
+		Metrics: NewEventStats(),
+		TotalQueries: 0,
 	}
 	return class
 }
 
 func (c *QueryClass) AddEvent(e *Event) {
-	c.totalEvents++
-	c.stats.Add(e)
+	c.TotalQueries++
+	c.Metrics.Add(e)
 }
 
+func (c *QueryClass) Finalize() {
+	c.Metrics.Current()
+}
