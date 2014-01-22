@@ -12,14 +12,14 @@ type GlobalClass struct {
 	startTs time.Time
 	endTs time.Time
 	TotalQueries uint64
-	UniqueQueriess uint64
+	UniqueQueries uint64
 	Metrics *EventStats
 }
 
 func NewGlobalClass() *GlobalClass {
 	class := &GlobalClass{
 		TotalQueries: 0,
-		UniqueQueriess: 0,
+		UniqueQueries: 0,
 		Metrics: NewEventStats(),
 	}
 	return class
@@ -30,8 +30,8 @@ func (c *GlobalClass) AddEvent(e *Event) {
 	c.Metrics.Add(e)
 }
 
-func (c *GlobalClass) Finalize(UniqueQueriess uint64) {
-	c.UniqueQueriess = UniqueQueriess
+func (c *GlobalClass) Finalize(UniqueQueries uint64) {
+	c.UniqueQueries = UniqueQueries
 	c.Metrics.Current()
 }
 
