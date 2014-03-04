@@ -1,9 +1,9 @@
 package log
 
 type EventStats struct {
-	TimeMetrics map[string]*TimeStats `json:",omitempty"`
+	TimeMetrics   map[string]*TimeStats   `json:",omitempty"`
 	NumberMetrics map[string]*NumberStats `json:",omitempty"`
-	BoolMetrics map[string]*BoolStats `json:",omitempty"`
+	BoolMetrics   map[string]*BoolStats   `json:",omitempty"`
 }
 
 type TimeStats struct {
@@ -23,15 +23,15 @@ type NumberStats struct {
 }
 
 type BoolStats struct {
-	Cnt uint64
+	Cnt  uint64
 	True uint8
 }
 
 func NewEventStats() *EventStats {
 	s := &EventStats{
-		TimeMetrics: make(map[string]*TimeStats),
+		TimeMetrics:   make(map[string]*TimeStats),
 		NumberMetrics: make(map[string]*NumberStats),
-		BoolMetrics: make(map[string]*BoolStats),
+		BoolMetrics:   make(map[string]*BoolStats),
 	}
 	return s
 }

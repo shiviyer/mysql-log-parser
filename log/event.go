@@ -1,11 +1,11 @@
 package log
 
 import (
+	"crypto/md5"
 	"fmt"
 	"io"
-	"strings"
 	"regexp"
-	"crypto/md5"
+	"strings"
 )
 
 var spaceRe *regexp.Regexp = regexp.MustCompile(`\s+`)
@@ -18,6 +18,7 @@ var number1Re *regexp.Regexp = regexp.MustCompile(`\b[0-9+-][0-9a-f.xb+-]*`)
 var number2Re *regexp.Regexp = regexp.MustCompile(`[xb.+-]\?`)
 var valueListRe *regexp.Regexp = regexp.MustCompile(`\b(in|values?)(?:[\s,]*\([\s?,]*\))+`)
 var multiLineCommentRe *regexp.Regexp = regexp.MustCompile(`(?sm)/\*[^!].*?\*/`)
+
 // Go re doesn't support ?=, but I don't think slow logs can have -- comments,
 // so we don't need this for now
 //var oneLineCommentRe *regexp.Regexp = regexp.MustCompile(`(?:--|#)[^'"\r\n]*(?=[\r\n]|\z)`)
@@ -27,16 +28,16 @@ var adminCmdRe *regexp.Regexp = regexp.MustCompile(`\Aadministrator command: `)
 var storedProcRe *regexp.Regexp = regexp.MustCompile(`(?i)\A\s*(call\s+\S+)\(`)
 
 type Event struct {
-	Offset uint64 // byte offset in log file, start of event
-	Ts string     // if present in log file, often times not
-	Admin bool    // Query is admin command not SQL query
-	Query string  // SQL query or admin command
-	User string
-	Host string
-	Db string
-	TimeMetrics map[string]float32   // *_time and *_wait metrics
+	Offset        uint64 // byte offset in log file, start of event
+	Ts            string // if present in log file, often times not
+	Admin         bool   // Query is admin command not SQL query
+	Query         string // SQL query or admin command
+	User          string
+	Host          string
+	Db            string
+	TimeMetrics   map[string]float32 // *_time and *_wait metrics
 	NumberMetrics map[string]uint64  // most metrics
-	BoolMetrics map[string]bool      // yes/no metrics
+	BoolMetrics   map[string]bool    // yes/no metrics
 }
 
 func NewEvent() *Event {
@@ -80,10 +81,10 @@ func Fingerprint(q string) string {
 
 	// Lowercase the query then do case-sensitive replacements
 	q = strings.ToLower(q)
-	q = valueListRe.ReplaceAllString(q, "$1(?+)") // in|value (...) -> in|value (?+)
+	q = valueListRe.ReplaceAllString(q, "$1(?+)")      // in|value (...) -> in|value (?+)
 	q = unionRe.ReplaceAllString(q, "$1 /*repeat$2*/") // @todo
-	q = nullRe.ReplaceAllString(q, "?") // null -> ?
-	q = limitRe.ReplaceAllString(q, "limit ?") // limit N -> limit ?
+	q = nullRe.ReplaceAllString(q, "?")                // null -> ?
+	q = limitRe.ReplaceAllString(q, "limit ?")         // limit N -> limit ?
 
 	return q
 }

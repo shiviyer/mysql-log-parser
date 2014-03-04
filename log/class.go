@@ -9,18 +9,18 @@ import (
 /////////////////////////////////////////////////////////////////////////////
 
 type GlobalClass struct {
-	startTs time.Time
-	endTs time.Time
-	TotalQueries uint64
+	startTs       time.Time
+	endTs         time.Time
+	TotalQueries  uint64
 	UniqueQueries uint64
-	Metrics *EventStats
+	Metrics       *EventStats
 }
 
 func NewGlobalClass() *GlobalClass {
 	class := &GlobalClass{
-		TotalQueries: 0,
+		TotalQueries:  0,
 		UniqueQueries: 0,
-		Metrics: NewEventStats(),
+		Metrics:       NewEventStats(),
 	}
 	return class
 }
@@ -40,17 +40,17 @@ func (c *GlobalClass) Finalize(UniqueQueries uint64) {
 /////////////////////////////////////////////////////////////////////////////
 
 type QueryClass struct {
-	Id string
-	Fingerprint string
-	Metrics *EventStats
+	Id           string
+	Fingerprint  string
+	Metrics      *EventStats
 	TotalQueries uint64
 }
 
 func NewQueryClass(classId string, fingerprint string) *QueryClass {
 	class := &QueryClass{
-		Id: classId,
-		Fingerprint: fingerprint,
-		Metrics: NewEventStats(),
+		Id:           classId,
+		Fingerprint:  fingerprint,
+		Metrics:      NewEventStats(),
 		TotalQueries: 0,
 	}
 	return class

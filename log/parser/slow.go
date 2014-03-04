@@ -1,37 +1,37 @@
 package parser
 
 import (
-	"os"
-	l "log"
-	"fmt"
-	"time"
 	"bufio"
+	"fmt"
+	"github.com/percona/percona-go-mysql/log"
+	l "log"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
-	"github.com/percona/percona-go-mysql/log"
+	"time"
 )
 
 type SlowLogParser struct {
-	file *os.File
-	debug bool
-	scanner *bufio.Scanner
-	EventChan chan *log.Event
-	inHeader bool
-	inQuery bool
+	file        *os.File
+	debug       bool
+	scanner     *bufio.Scanner
+	EventChan   chan *log.Event
+	inHeader    bool
+	inQuery     bool
 	headerLines uint
-	queryLines uint64
-	bytesRead uint64
-	lineOffset uint64
-	event *log.Event
-	timeRe *regexp.Regexp
-	userRe *regexp.Regexp
-	metricsRe *regexp.Regexp
-	adminRe *regexp.Regexp
-	setRe *regexp.Regexp
+	queryLines  uint64
+	bytesRead   uint64
+	lineOffset  uint64
+	event       *log.Event
+	timeRe      *regexp.Regexp
+	userRe      *regexp.Regexp
+	metricsRe   *regexp.Regexp
+	adminRe     *regexp.Regexp
+	setRe       *regexp.Regexp
 }
 
-func NewSlowLogParser(file *os.File, debug bool) *SlowLogParser { 
+func NewSlowLogParser(file *os.File, debug bool) *SlowLogParser {
 	scanner := bufio.NewScanner(file)
 	if debug { // @debug
 		l.SetFlags(l.Ltime | l.Lmicroseconds)
@@ -39,22 +39,22 @@ func NewSlowLogParser(file *os.File, debug bool) *SlowLogParser {
 		l.Println("parsing " + file.Name())
 	}
 	p := &SlowLogParser{
-		file: file,
-		debug: debug,
-		scanner: scanner,
-		EventChan: make(chan *log.Event),
-		inHeader: false,
-		inQuery: false,
+		file:        file,
+		debug:       debug,
+		scanner:     scanner,
+		EventChan:   make(chan *log.Event),
+		inHeader:    false,
+		inQuery:     false,
 		headerLines: 0,
-		queryLines: 0,
-		bytesRead: 0,
-		lineOffset: 0,
-		event: log.NewEvent(),
-		timeRe: regexp.MustCompile(`Time: (\S+\s{1,2}\S+)`),
-		userRe: regexp.MustCompile(`User@Host: ([^\[]+|\[[^[]+\]).*?@ (\S*) \[(.*)\]`),
-		metricsRe: regexp.MustCompile(`(\w+): (\S+|\z)`),
-		adminRe: regexp.MustCompile(`command: (.+)`),
-		setRe: regexp.MustCompile(`SET (?:last_insert_id|insert_id|timestamp)`),
+		queryLines:  0,
+		bytesRead:   0,
+		lineOffset:  0,
+		event:       log.NewEvent(),
+		timeRe:      regexp.MustCompile(`Time: (\S+\s{1,2}\S+)`),
+		userRe:      regexp.MustCompile(`User@Host: ([^\[]+|\[[^[]+\]).*?@ (\S*) \[(.*)\]`),
+		metricsRe:   regexp.MustCompile(`(\w+): (\S+|\z)`),
+		adminRe:     regexp.MustCompile(`command: (.+)`),
+		setRe:       regexp.MustCompile(`SET (?:last_insert_id|insert_id|timestamp)`),
 	}
 	return p
 }
@@ -65,7 +65,7 @@ func (p *SlowLogParser) Run() {
 	for p.scanner.Scan() {
 		line := p.scanner.Text()
 
-		lineLen := uint64(len(line)) + 1  // +1 for \n
+		lineLen := uint64(len(line)) + 1 // +1 for \n
 		p.bytesRead += lineLen
 		p.lineOffset = p.bytesRead - lineLen
 		if p.lineOffset != 0 {
@@ -157,7 +157,7 @@ func (p *SlowLogParser) parseHeader(line string) {
 		}
 		p.event.Admin = true
 		m := p.adminRe.FindStringSubmatch(line)
-		p.event.Query= m[1]
+		p.event.Query = m[1]
 
 		// admin commands should be the last line of the event.
 		p.sendEvent(false, false)
@@ -167,7 +167,7 @@ func (p *SlowLogParser) parseHeader(line string) {
 		}
 		m := p.metricsRe.FindAllStringSubmatch(line, -1)
 		for _, smv := range m {
-			// [String, Metric, Value], e.g. ["Query_time: 2" "Query_time" "2"] 
+			// [String, Metric, Value], e.g. ["Query_time: 2" "Query_time" "2"]
 			if strings.HasSuffix(smv[1], "_time") || strings.HasSuffix(smv[1], "_wait") {
 				// microsecond value
 				val, _ := strconv.ParseFloat(smv[2], 32)

@@ -34,12 +34,12 @@ func (s *SlowLogTestSuite) TestParserSlowLog001(t *C) {
 	got := ParseSlowLog("slow001.log", false)
 	expect := []log.Event{
 		{
-			Ts:    "071015 21:43:52",
-			Admin: false,
-			Query: `select sleep(2) from n`,
-			User:  "root",
-			Host:  "localhost",
-			Db:    "test",
+			Ts:     "071015 21:43:52",
+			Admin:  false,
+			Query:  `select sleep(2) from n`,
+			User:   "root",
+			Host:   "localhost",
+			Db:     "test",
 			Offset: 200,
 			TimeMetrics: map[string]float32{
 				"Query_time": 2,
@@ -52,12 +52,12 @@ func (s *SlowLogTestSuite) TestParserSlowLog001(t *C) {
 			BoolMetrics: map[string]bool{},
 		},
 		{
-			Ts:    "071015 21:45:10",
-			Admin: false,
-			Query: `select sleep(2) from test.n`,
-			User:  "root",
-			Host:  "localhost",
-			Db:    "sakila",
+			Ts:     "071015 21:45:10",
+			Admin:  false,
+			Query:  `select sleep(2) from test.n`,
+			User:   "root",
+			Host:   "localhost",
+			Db:     "sakila",
 			Offset: 359,
 			TimeMetrics: map[string]float32{
 				"Query_time": 2,
@@ -78,11 +78,11 @@ func (s *SlowLogTestSuite) TestParseSlowLog002(t *C) {
 	got := ParseSlowLog("slow002.log", false)
 	expect := []log.Event{
 		{
-			Query: "BEGIN",
-			Ts:    "071218 11:48:27",
-			Admin: false,
-			User:  "[SQL_SLAVE]",
-			Host:  "",
+			Query:  "BEGIN",
+			Ts:     "071218 11:48:27",
+			Admin:  false,
+			User:   "[SQL_SLAVE]",
+			Host:   "",
 			Offset: 0,
 			TimeMetrics: map[string]float32{
 				"Query_time": 0.000012,
@@ -109,9 +109,9 @@ func (s *SlowLogTestSuite) TestParseSlowLog002(t *C) {
 			Query: `update db2.tuningdetail_21_265507 n
       inner join db1.gonzo a using(gonzo) 
       set n.column1 = a.column1, n.word3 = a.word3`,
-			Admin: false,
-			User:  "[SQL_SLAVE]",
-			Host:  "",
+			Admin:  false,
+			User:   "[SQL_SLAVE]",
+			Host:   "",
 			Offset: 338,
 			TimeMetrics: map[string]float32{
 				"Query_time": 0.726052,
@@ -136,9 +136,9 @@ func (s *SlowLogTestSuite) TestParseSlowLog002(t *C) {
 		{
 			Query: `INSERT INTO db3.vendor11gonzo (makef, bizzle)
 VALUES ('', 'Exact')`,
-			Admin: false,
-			User:  "[SQL_SLAVE]",
-			Host:  "",
+			Admin:  false,
+			User:   "[SQL_SLAVE]",
+			Host:   "",
 			Offset: 815,
 			TimeMetrics: map[string]float32{
 				"InnoDB_queue_wait":    0.000000,
@@ -170,9 +170,9 @@ VALUES ('', 'Exact')`,
 			Query: `UPDATE db4.vab3concept1upload
 SET    vab3concept1id = '91848182522'
 WHERE  vab3concept1upload='6994465'`,
-			Admin: false,
-			User:  "[SQL_SLAVE]",
-			Host:  "",
+			Admin:  false,
+			User:   "[SQL_SLAVE]",
+			Host:   "",
 			Offset: 1334,
 			TimeMetrics: map[string]float32{
 				"Query_time":           0.033384,
@@ -203,9 +203,9 @@ WHERE  vab3concept1upload='6994465'`,
 		{
 			Query: `INSERT INTO db1.conch (word3, vid83)
 VALUES ('211', '18')`,
-			Admin: false,
-			User:  "[SQL_SLAVE]",
-			Host:  "",
+			Admin:  false,
+			User:   "[SQL_SLAVE]",
+			Host:   "",
 			Offset: 1864,
 			TimeMetrics: map[string]float32{
 				"InnoDB_queue_wait":    0.000000,
@@ -236,9 +236,9 @@ VALUES ('211', '18')`,
 		{
 			Query: `UPDATE foo.bar
 SET    biz = '91848182522'`,
-			Admin: false,
-			User:  "[SQL_SLAVE]",
-			Host:  "",
+			Admin:  false,
+			User:   "[SQL_SLAVE]",
+			Host:   "",
 			Offset: 2393,
 			TimeMetrics: map[string]float32{
 				"Lock_time":            0.000027,
@@ -270,9 +270,9 @@ SET    biz = '91848182522'`,
 			Query: `UPDATE bizzle.bat
 SET    boop='bop: 899'
 WHERE  fillze='899'`,
-			Admin: false,
-			User:  "[SQL_SLAVE]",
-			Host:  "",
+			Admin:  false,
+			User:   "[SQL_SLAVE]",
+			Host:   "",
 			Offset: 2861,
 			TimeMetrics: map[string]float32{
 				"Query_time":           0.000530,
@@ -303,9 +303,9 @@ WHERE  fillze='899'`,
 		{
 			Query: `UPDATE foo.bar
 SET    biz = '91848182522'`,
-			Admin: false,
-			User:  "[SQL_SLAVE]",
-			Host:  "",
+			Admin:  false,
+			User:   "[SQL_SLAVE]",
+			Host:   "",
 			Offset: 3374,
 			TimeMetrics: map[string]float32{
 				"Query_time":           0.000530,
@@ -342,11 +342,11 @@ func (s *SlowLogTestSuite) TestParserSlowLog003(t *C) {
 	got := ParseSlowLog("slow003.log", false)
 	expect := []log.Event{
 		{
-			Query: "BEGIN",
-			Admin: false,
-			Host:  "",
-			Ts:    "071218 11:48:27",
-			User:  "[SQL_SLAVE]",
+			Query:  "BEGIN",
+			Admin:  false,
+			Host:   "",
+			Ts:     "071218 11:48:27",
+			User:   "[SQL_SLAVE]",
 			Offset: 2,
 			BoolMetrics: map[string]bool{
 				"Filesort_on_disk":  false,
@@ -377,14 +377,13 @@ func (s *SlowLogTestSuite) TestParserSlowLog004(t *C) {
 	got := ParseSlowLog("slow004.log", false)
 	expect := []log.Event{
 		{
-			Query: "select 12_13_foo from (select 12foo from 123_bar) as 123baz",
-			Admin: false,
-			Host:  "localhost",
-			Ts:    "071015 21:43:52",
-			User:  "root",
-			Offset: 200,
-			BoolMetrics: map[string]bool{
-			},
+			Query:       "select 12_13_foo from (select 12foo from 123_bar) as 123baz",
+			Admin:       false,
+			Host:        "localhost",
+			Ts:          "071015 21:43:52",
+			User:        "root",
+			Offset:      200,
+			BoolMetrics: map[string]bool{},
 			TimeMetrics: map[string]float32{
 				"Lock_time":  0.000000,
 				"Query_time": 2.000000,
@@ -409,11 +408,11 @@ func (s *SlowLogTestSuite) TestParserSlowLog005(t *C) {
 	got := ParseSlowLog("slow005.log", false)
 	expect := []log.Event{
 		{
-			Query: "foo\nbar\n\t\t\t0 AS counter\nbaz",
-			Admin: false,
-			Host:  "",
-			Ts:    "071218 11:48:27",
-			User:  "[SQL_SLAVE]",
+			Query:  "foo\nbar\n\t\t\t0 AS counter\nbaz",
+			Admin:  false,
+			Host:   "",
+			Ts:     "071218 11:48:27",
+			User:   "[SQL_SLAVE]",
 			Offset: 0,
 			BoolMetrics: map[string]bool{
 				"Filesort_on_disk":  false,
@@ -445,12 +444,12 @@ func (s *SlowLogTestSuite) TestParserSlowLog006(t *C) {
 	got := ParseSlowLog("slow006.log", false)
 	expect := []log.Event{
 		{
-			Query: "SELECT col FROM foo_tbl",
-			Db: "foo",
-			Admin: false,
-			Host:  "",
-			Ts:    "071218 11:48:27",
-			User:  "[SQL_SLAVE]",
+			Query:  "SELECT col FROM foo_tbl",
+			Db:     "foo",
+			Admin:  false,
+			Host:   "",
+			Ts:     "071218 11:48:27",
+			User:   "[SQL_SLAVE]",
 			Offset: 0,
 			BoolMetrics: map[string]bool{
 				"Filesort_on_disk":  false,
@@ -473,12 +472,12 @@ func (s *SlowLogTestSuite) TestParserSlowLog006(t *C) {
 			},
 		},
 		{
-			Query: "SELECT col FROM foo_tbl",
-			Db: "foo",
-			Admin: false,
-			Host:  "",
-			Ts:    "071218 11:48:57",
-			User:  "[SQL_SLAVE]",
+			Query:  "SELECT col FROM foo_tbl",
+			Db:     "foo",
+			Admin:  false,
+			Host:   "",
+			Ts:     "071218 11:48:57",
+			User:   "[SQL_SLAVE]",
 			Offset: 369,
 			BoolMetrics: map[string]bool{
 				"Filesort_on_disk":  false,
@@ -501,12 +500,12 @@ func (s *SlowLogTestSuite) TestParserSlowLog006(t *C) {
 			},
 		},
 		{
-			Query: "SELECT col FROM bar_tbl",
-			Db: "bar",
-			Admin: false,
-			Host:  "",
-			Ts:    "071218 11:48:57",
-			User:  "[SQL_SLAVE]",
+			Query:  "SELECT col FROM bar_tbl",
+			Db:     "bar",
+			Admin:  false,
+			Host:   "",
+			Ts:     "071218 11:48:57",
+			User:   "[SQL_SLAVE]",
 			Offset: 737,
 			BoolMetrics: map[string]bool{
 				"Filesort_on_disk":  false,
@@ -529,12 +528,12 @@ func (s *SlowLogTestSuite) TestParserSlowLog006(t *C) {
 			},
 		},
 		{
-			Query: "SELECT col FROM bar_tbl",
-			Db: "bar",
-			Admin: false,
-			Host:  "",
-			Ts:    "071218 11:49:05",
-			User:  "[SQL_SLAVE]",
+			Query:  "SELECT col FROM bar_tbl",
+			Db:     "bar",
+			Admin:  false,
+			Host:   "",
+			Ts:     "071218 11:49:05",
+			User:   "[SQL_SLAVE]",
 			Offset: 1101,
 			BoolMetrics: map[string]bool{
 				"Filesort_on_disk":  false,
@@ -557,12 +556,12 @@ func (s *SlowLogTestSuite) TestParserSlowLog006(t *C) {
 			},
 		},
 		{
-			Query: "SELECT col FROM bar_tbl",
-			Db: "bar",
-			Admin: false,
-			Host:  "",
-			Ts:    "071218 11:49:07",
-			User:  "[SQL_SLAVE]",
+			Query:  "SELECT col FROM bar_tbl",
+			Db:     "bar",
+			Admin:  false,
+			Host:   "",
+			Ts:     "071218 11:49:07",
+			User:   "[SQL_SLAVE]",
 			Offset: 1469,
 			BoolMetrics: map[string]bool{
 				"Filesort_on_disk":  false,
@@ -585,12 +584,12 @@ func (s *SlowLogTestSuite) TestParserSlowLog006(t *C) {
 			},
 		},
 		{
-			Query: "SELECT col FROM foo_tbl",
-			Db: "foo",
-			Admin: false,
-			Host:  "",
-			Ts:    "071218 11:49:30",
-			User:  "[SQL_SLAVE]",
+			Query:  "SELECT col FROM foo_tbl",
+			Db:     "foo",
+			Admin:  false,
+			Host:   "",
+			Ts:     "071218 11:49:30",
+			User:   "[SQL_SLAVE]",
 			Offset: 1833,
 			BoolMetrics: map[string]bool{
 				"Filesort_on_disk":  false,
@@ -621,15 +620,14 @@ func (s *SlowLogTestSuite) TestParserSlowLog007(t *C) {
 	got := ParseSlowLog("slow007.log", false)
 	expect := []log.Event{
 		{
-			Query: "SELECT fruit FROM trees",
-			Db: "db2",
-			Admin: false,
-			Host:  "",
-			Ts:    "071218 11:48:27",
-			User:  "[SQL_SLAVE]",
-			Offset: 0,
-			BoolMetrics: map[string]bool{
-			},
+			Query:       "SELECT fruit FROM trees",
+			Db:          "db2",
+			Admin:       false,
+			Host:        "",
+			Ts:          "071218 11:48:27",
+			User:        "[SQL_SLAVE]",
+			Offset:      0,
+			BoolMetrics: map[string]bool{},
 			TimeMetrics: map[string]float32{
 				"Query_time": 0.000012,
 				"Lock_time":  0.000000,
@@ -654,14 +652,13 @@ func (s *SlowLogTestSuite) TestParserSlowLog008(t *C) {
 	got := ParseSlowLog("slow008.log", false)
 	expect := []log.Event{
 		{
-			Query: "Quit",
-			Db: "db1",
-			Admin: true,
-			Host:  "",
-			User:  "meow",
-			Offset: 0,
-			BoolMetrics: map[string]bool{
-			},
+			Query:       "Quit",
+			Db:          "db1",
+			Admin:       true,
+			Host:        "",
+			User:        "meow",
+			Offset:      0,
+			BoolMetrics: map[string]bool{},
 			TimeMetrics: map[string]float32{
 				"Query_time": 0.000002,
 				"Lock_time":  0.000000,
@@ -673,14 +670,13 @@ func (s *SlowLogTestSuite) TestParserSlowLog008(t *C) {
 			},
 		},
 		{
-			Query: "SET NAMES utf8",
-			Db: "db",
-			Admin: false,
-			Host:  "",
-			User:  "meow",
-			Offset: 221,
-			BoolMetrics: map[string]bool{
-			},
+			Query:       "SET NAMES utf8",
+			Db:          "db",
+			Admin:       false,
+			Host:        "",
+			User:        "meow",
+			Offset:      221,
+			BoolMetrics: map[string]bool{},
 			TimeMetrics: map[string]float32{
 				"Query_time": 0.000899,
 				"Lock_time":  0.000000,
@@ -692,14 +688,13 @@ func (s *SlowLogTestSuite) TestParserSlowLog008(t *C) {
 			},
 		},
 		{
-			Query: "SELECT MIN(id),MAX(id) FROM tbl",
-			Db: "db2",
-			Admin: false,
-			Host:  "",
-			User:  "meow",
-			Offset: 435,
-			BoolMetrics: map[string]bool{
-			},
+			Query:       "SELECT MIN(id),MAX(id) FROM tbl",
+			Db:          "db2",
+			Admin:       false,
+			Host:        "",
+			User:        "meow",
+			Offset:      435,
+			BoolMetrics: map[string]bool{},
 			TimeMetrics: map[string]float32{
 				"Query_time": 0.018799,
 				"Lock_time":  0.009453,
@@ -713,4 +708,3 @@ func (s *SlowLogTestSuite) TestParserSlowLog008(t *C) {
 	}
 	t.Check(got, EventsEqual, &expect)
 }
-

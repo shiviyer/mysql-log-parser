@@ -1,14 +1,14 @@
 package testlog
 
 import (
-	"os"
-	"os/exec"
 	"fmt"
-	l "log"
-	"reflect"
 	"github.com/percona/percona-go-mysql/log"
 	"github.com/percona/percona-go-mysql/log/parser"
 	"launchpad.net/gocheck"
+	l "log"
+	"os"
+	"os/exec"
+	"reflect"
 )
 
 var Sample = os.Getenv("GOPATH") + "/src/github.com/percona/percona-go-mysql/test/logs/"
@@ -74,31 +74,31 @@ func (checker *eventsChecker) Check(params []interface{}, names []string) (resul
 			case reflect.String:
 				if gotVal.String() != expectVal.String() {
 					err := fmt.Sprintf("event %d field %s:\n     got: %s\nexpected: %s\n",
-						i,  gotEvent.Type().Field(j).Name, gotVal.String(), expectVal.String())
+						i, gotEvent.Type().Field(j).Name, gotVal.String(), expectVal.String())
 					return false, err
 				}
 			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 				if gotVal.Int() != expectVal.Int() {
 					err := fmt.Sprintf("event %d field %s:\n     got: %d\nexpected: %d\n",
-						i,  gotEvent.Type().Field(j).Name, gotVal.Int(), expectVal.Int())
+						i, gotEvent.Type().Field(j).Name, gotVal.Int(), expectVal.Int())
 					return false, err
 				}
 			case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 				if gotVal.Uint() != expectVal.Uint() {
 					err := fmt.Sprintf("event %d field %s:\n     got: %d\nexpected: %d\n",
-						i,  gotEvent.Type().Field(j).Name, gotVal.Uint(), expectVal.Uint())
+						i, gotEvent.Type().Field(j).Name, gotVal.Uint(), expectVal.Uint())
 					return false, err
 				}
 			case reflect.Bool:
 				if gotVal.Bool() != expectVal.Bool() {
 					err := fmt.Sprintf("event %d field %s:\n     got: %t\nexpected: %t\n",
-						i,  gotEvent.Type().Field(j).Name, gotVal.Bool(), expectVal.Bool())
+						i, gotEvent.Type().Field(j).Name, gotVal.Bool(), expectVal.Bool())
 					return false, err
 				}
 			case reflect.Map:
 				if equal, mapErr := checkEventMaps(gotVal, expectVal); !equal {
 					err := fmt.Sprintf("event %d field %s %s",
-						i,  gotEvent.Type().Field(j).Name, mapErr)
+						i, gotEvent.Type().Field(j).Name, mapErr)
 					return false, err
 				}
 			default:
@@ -124,7 +124,7 @@ func checkEventMaps(gotMap reflect.Value, expectMap reflect.Value) (bool, string
 			err := fmt.Sprintf("     got: %s values\nexpected: no %s values\n", gotKeys[0], gotKeys[0])
 			return false, err
 		}
-		return true, ""  // no keys or values in either map
+		return true, "" // no keys or values in either map
 	}
 
 	// Get the type of values in this map.
@@ -194,7 +194,7 @@ func checkEventMaps(gotMap reflect.Value, expectMap reflect.Value) (bool, string
 			}
 		default:
 			// If this happens, we need to add a new case ^ to handle the data type.
-            err := fmt.Sprintf("checkEventMaps cannot handle type %s", valueType)
+			err := fmt.Sprintf("checkEventMaps cannot handle type %s", valueType)
 			return false, err
 		}
 	}
@@ -221,7 +221,7 @@ func (checker *statsChecker) Check(params []interface{}, names []string) (result
 	expect := reflect.ValueOf(params[1]).Elem()
 
 	// For TimeMetrics, NumberMetrics, and BoolMetrics...
-	 for i := 0; i < expect.NumField(); i++ {
+	for i := 0; i < expect.NumField(); i++ {
 		gotMetrics := got.Field(i)
 		expectMetrics := expect.Field(i)
 

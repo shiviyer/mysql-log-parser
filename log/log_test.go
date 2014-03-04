@@ -1,7 +1,7 @@
 package log_test
 
 import (
-//	"fmt"
+	//	"fmt"
 	"github.com/percona/percona-go-mysql/log"
 	"github.com/percona/percona-go-mysql/test"
 	. "launchpad.net/gocheck"
@@ -337,35 +337,35 @@ func (s *FingerprintTestSuite) TestFingerprintUnion(t *C) {
 
 func (s *FingerprintTestSuite) TestFingerprintHugeQueries(t *C) {
 	t.Skip("Not testing huge queries yet")
-/*
-	var q string
-	var f string
+	/*
+		var q string
+		var f string
 
-	// Issue 322: mk-query-digest segfault before report
-	t.Check(
-		log.Fingerprint(q),
-		load_file("t/lib/samples/huge_replace_into_values.txt") ),
-	   Equals,
-	   `replace into `film_actor` values(?+)`
-	   "huge replace into values() (issue 322)",
-	)
+		// Issue 322: mk-query-digest segfault before report
+		t.Check(
+			log.Fingerprint(q),
+			load_file("t/lib/samples/huge_replace_into_values.txt") ),
+		   Equals,
+		   `replace into `film_actor` values(?+)`
+		   "huge replace into values() (issue 322)",
+		)
 
-	t.Check(
-		log.Fingerprint(q),
-		load_file("t/lib/samples/huge_insert_ignore_into_values.txt") ),
-	   Equals,
-	   `insert ignore into `film_actor` values(?+)`
-	   "huge insert ignore into values() (issue 322)",
-	)
+		t.Check(
+			log.Fingerprint(q),
+			load_file("t/lib/samples/huge_insert_ignore_into_values.txt") ),
+		   Equals,
+		   `insert ignore into `film_actor` values(?+)`
+		   "huge insert ignore into values() (issue 322)",
+		)
 
-	t.Check(
-		log.Fingerprint(q),
-		load_file("t/lib/samples/huge_explicit_cols_values.txt") ),
-	   Equals,
-	   `insert into foo (a,b,c,d,e,f,g,h) values(?+)`
-	   "huge insert with explicit columns before values() (issue 322)",
-	)
-*/
+		t.Check(
+			log.Fingerprint(q),
+			load_file("t/lib/samples/huge_explicit_cols_values.txt") ),
+		   Equals,
+		   `insert into foo (a,b,c,d,e,f,g,h) values(?+)`
+		   "huge insert with explicit columns before values() (issue 322)",
+		)
+	*/
 }
 
 func (s *FingerprintTestSuite) TestFingerprintOneLineComments(t *C) {
@@ -438,36 +438,36 @@ func (s *EventStatsTestSuite) TestEventStats(t *C) {
 	expect := &log.EventStats{
 		TimeMetrics: map[string]*log.TimeStats{
 			"Lock_time": &log.TimeStats{
-			  Cnt: 2,
-			  Sum: 0,
-			  Min: 0,
-			  Max: 0,
-			  Avg: 0,
+				Cnt: 2,
+				Sum: 0,
+				Min: 0,
+				Max: 0,
+				Avg: 0,
 			},
 			"Query_time": &log.TimeStats{
-			  Cnt: 2,
-			  Sum: 4,
-			  Min: 2,
-			  Max: 2,
-			  Avg: 2,
+				Cnt: 2,
+				Sum: 4,
+				Min: 2,
+				Max: 2,
+				Avg: 2,
 			},
-		  },
-		  NumberMetrics: map[string]*log.NumberStats{
+		},
+		NumberMetrics: map[string]*log.NumberStats{
 			"Rows_examined": &log.NumberStats{
-			  Cnt: 2,
-			  Sum: 0,
-			  Min: 0,
-			  Max: 0,
-			  Avg: 0,
+				Cnt: 2,
+				Sum: 0,
+				Min: 0,
+				Max: 0,
+				Avg: 0,
 			},
 			"Rows_sent": &log.NumberStats{
-			  Cnt: 2,
-			  Sum: 2,
-			  Min: 1,
-			  Max: 1,
-			  Avg: 1,
+				Cnt: 2,
+				Sum: 2,
+				Min: 1,
+				Max: 1,
+				Avg: 1,
 			},
-		  },
-		}
+		},
+	}
 	t.Assert(stats, testlog.StatsEqual, expect)
 }
