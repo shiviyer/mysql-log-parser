@@ -17,21 +17,22 @@ func Test(t *testing.T) { TestingT(t) }
 // //////////////////////////////////////////////////////////////////////////
 
 type SlowLogTestSuite struct {
-	p *parser.SlowLogParser
+	p   *parser.SlowLogParser
+	opt parser.Options
 }
 
 var _ = Suite(&SlowLogTestSuite{})
 
 // No input, no events.
 func (s *SlowLogTestSuite) TestParserEmptySlowLog(t *C) {
-	got := ParseSlowLog("empty.log", false)
+	got := ParseSlowLog("empty.log", s.opt)
 	expect := []log.Event{}
 	t.Check(got, EventsEqual, &expect)
 }
 
 // slow001 is a most basic basic, normal slow log--nothing exotic.
 func (s *SlowLogTestSuite) TestParserSlowLog001(t *C) {
-	got := ParseSlowLog("slow001.log", false)
+	got := ParseSlowLog("slow001.log", s.opt)
 	expect := []log.Event{
 		{
 			Ts:     "071015 21:43:52",
@@ -70,12 +71,15 @@ func (s *SlowLogTestSuite) TestParserSlowLog001(t *C) {
 			BoolMetrics: map[string]bool{},
 		},
 	}
-	t.Check(got, EventsEqual, &expect)
+	if same, diff := IsDeeply(got, &expect); !same {
+		Dump(got)
+		t.Error(diff)
+	}
 }
 
 // slow002 is a basic slow log like slow001 but with more metrics, multi-line queries, etc.
 func (s *SlowLogTestSuite) TestParseSlowLog002(t *C) {
-	got := ParseSlowLog("slow002.log", false)
+	got := ParseSlowLog("slow002.log", s.opt)
 	expect := []log.Event{
 		{
 			Query:  "BEGIN",
@@ -334,12 +338,15 @@ SET    biz = '91848182522'`,
 			},
 		},
 	}
-	t.Check(got, EventsEqual, &expect)
+	if same, diff := IsDeeply(got, &expect); !same {
+		Dump(got)
+		t.Error(diff)
+	}
 }
 
 // slow003 starts with a blank line.  I guess this once messed up SlowLogParser.pm?
 func (s *SlowLogTestSuite) TestParserSlowLog003(t *C) {
-	got := ParseSlowLog("slow003.log", false)
+	got := ParseSlowLog("slow003.log", s.opt)
 	expect := []log.Event{
 		{
 			Query:  "BEGIN",
@@ -369,12 +376,15 @@ func (s *SlowLogTestSuite) TestParserSlowLog003(t *C) {
 			},
 		},
 	}
-	t.Check(got, EventsEqual, &expect)
+	if same, diff := IsDeeply(got, &expect); !same {
+		Dump(got)
+		t.Error(diff)
+	}
 }
 
 // I don't know what's special about this slow004.
 func (s *SlowLogTestSuite) TestParserSlowLog004(t *C) {
-	got := ParseSlowLog("slow004.log", false)
+	got := ParseSlowLog("slow004.log", s.opt)
 	expect := []log.Event{
 		{
 			Query:       "select 12_13_foo from (select 12foo from 123_bar) as 123baz",
@@ -394,7 +404,10 @@ func (s *SlowLogTestSuite) TestParserSlowLog004(t *C) {
 			},
 		},
 	}
-	t.Check(got, EventsEqual, &expect)
+	if same, diff := IsDeeply(got, &expect); !same {
+		Dump(got)
+		t.Error(diff)
+	}
 }
 
 // slow005 has a multi-line query with tabs in it.  A pathological case that
@@ -405,7 +418,7 @@ func (s *SlowLogTestSuite) TestParserSlowLog004(t *C) {
 // There's no easy way to detect that "# Query_time" is part of the query and
 // not part of the next event's header.
 func (s *SlowLogTestSuite) TestParserSlowLog005(t *C) {
-	got := ParseSlowLog("slow005.log", false)
+	got := ParseSlowLog("slow005.log", s.opt)
 	expect := []log.Event{
 		{
 			Query:  "foo\nbar\n\t\t\t0 AS counter\nbaz",
@@ -435,13 +448,16 @@ func (s *SlowLogTestSuite) TestParserSlowLog005(t *C) {
 			},
 		},
 	}
-	t.Check(got, EventsEqual, &expect)
+	if same, diff := IsDeeply(got, &expect); !same {
+		Dump(got)
+		t.Error(diff)
+	}
 }
 
 // slow006 has the Schema: db metric _or_ use db; lines before the queries.
 // Schema value should be used for log.Event.Db is no use db; line is present.
 func (s *SlowLogTestSuite) TestParserSlowLog006(t *C) {
-	got := ParseSlowLog("slow006.log", false)
+	got := ParseSlowLog("slow006.log", s.opt)
 	expect := []log.Event{
 		{
 			Query:  "SELECT col FROM foo_tbl",
@@ -612,12 +628,15 @@ func (s *SlowLogTestSuite) TestParserSlowLog006(t *C) {
 			},
 		},
 	}
-	t.Check(got, EventsEqual, &expect)
+	if same, diff := IsDeeply(got, &expect); !same {
+		Dump(got)
+		t.Error(diff)
+	}
 }
 
 // slow007 has Schema: db1 _and_ use db2;.  db2 should be used.
 func (s *SlowLogTestSuite) TestParserSlowLog007(t *C) {
-	got := ParseSlowLog("slow007.log", false)
+	got := ParseSlowLog("slow007.log", s.opt)
 	expect := []log.Event{
 		{
 			Query:       "SELECT fruit FROM trees",
@@ -639,7 +658,10 @@ func (s *SlowLogTestSuite) TestParserSlowLog007(t *C) {
 			},
 		},
 	}
-	t.Check(got, EventsEqual, &expect)
+	if same, diff := IsDeeply(got, &expect); !same {
+		Dump(got)
+		t.Error(diff)
+	}
 }
 
 // slow008 has 4 interesting things (which makes it a poor test case since we're
@@ -649,7 +671,7 @@ func (s *SlowLogTestSuite) TestParserSlowLog007(t *C) {
 //   3) No Time metrics
 //   4) IPs in the host metric, but we don't currently support these
 func (s *SlowLogTestSuite) TestParserSlowLog008(t *C) {
-	got := ParseSlowLog("slow008.log", false)
+	got := ParseSlowLog("slow008.log", s.opt)
 	expect := []log.Event{
 		{
 			Query:       "Quit",
@@ -706,5 +728,51 @@ func (s *SlowLogTestSuite) TestParserSlowLog008(t *C) {
 			},
 		},
 	}
-	t.Check(got, EventsEqual, &expect)
+	if same, diff := IsDeeply(got, &expect); !same {
+		Dump(got)
+		t.Error(diff)
+	}
+}
+
+// Filter admin commands
+func (s *SlowLogTestSuite) TestParserSlowLog009(t *C) {
+	opt := parser.Options{
+		FilterAdminCommands: map[string]bool{
+			"Quit": true,
+		},
+	}
+	got := ParseSlowLog("slow009.log", opt)
+	expect := []log.Event{
+		{
+			Query:  "Refresh",
+			Db:     "",
+			Admin:  true,
+			Host:   "localhost",
+			User:   "root",
+			Offset: 197,
+			Ts:     "090311 18:11:50",
+			TimeMetrics: map[string]float32{
+				"Query_time": 0.017850,
+				"Lock_time":  0.000000,
+			},
+			NumberMetrics: map[string]uint64{
+				"Rows_examined": 0,
+				"Rows_sent":     0,
+				"Thread_id":     47,
+			},
+			BoolMetrics: map[string]bool{
+				"QC_Hit":            false,
+				"Full_scan":         false,
+				"Full_join":         false,
+				"Tmp_table":         false,
+				"Tmp_table_on_disk": false,
+				"Filesort":          false,
+				"Filesort_on_disk":  false,
+			},
+		},
+	}
+	if same, diff := IsDeeply(got, &expect); !same {
+		Dump(got)
+		t.Error(diff)
+	}
 }

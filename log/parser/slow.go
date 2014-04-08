@@ -13,6 +13,7 @@ import (
 )
 
 type SlowLogParser struct {
+	opt         Options
 	file        *os.File
 	debug       bool
 	scanner     *bufio.Scanner
@@ -31,16 +32,16 @@ type SlowLogParser struct {
 	setRe       *regexp.Regexp
 }
 
-func NewSlowLogParser(file *os.File, debug bool) *SlowLogParser {
+func NewSlowLogParser(file *os.File, opt Options) *SlowLogParser {
 	scanner := bufio.NewScanner(file)
-	if debug { // @debug
+	if opt.Debug { // @debug
 		l.SetFlags(l.Ltime | l.Lmicroseconds)
 		fmt.Println()
 		l.Println("parsing " + file.Name())
 	}
 	p := &SlowLogParser{
+		opt:         opt,
 		file:        file,
-		debug:       debug,
 		scanner:     scanner,
 		EventChan:   make(chan *log.Event),
 		inHeader:    false,
@@ -74,7 +75,7 @@ func (p *SlowLogParser) Run() {
 			p.lineOffset += 1
 		}
 
-		if p.debug { // @debug
+		if p.opt.Debug { // @debug
 			fmt.Println()
 			l.Printf("+%d line: %s", p.lineOffset, line)
 		}
@@ -93,7 +94,7 @@ func (p *SlowLogParser) Run() {
 		p.sendEvent(false, false)
 	}
 
-	if p.debug { // @debug
+	if p.opt.Debug { // @debug
 		fmt.Println()
 		l.Printf("done")
 	}
@@ -101,7 +102,7 @@ func (p *SlowLogParser) Run() {
 
 func (p *SlowLogParser) IsMetaLine(line string) bool {
 	if strings.HasPrefix(line, "/") || strings.HasPrefix(line, "Time") || strings.HasPrefix(line, "Tcp") || strings.HasPrefix(line, "TCP") {
-		if p.debug { // @debug
+		if p.opt.Debug { // @debug
 			l.Println("meta")
 		}
 		return true
@@ -131,13 +132,13 @@ func (p *SlowLogParser) parseHeader(line string) {
 	p.headerLines++
 
 	if strings.HasPrefix(line, "# Time") {
-		if p.debug { // @debug
+		if p.opt.Debug { // @debug
 			l.Println("time")
 		}
 		m := p.timeRe.FindStringSubmatch(line)
 		p.event.Ts = m[1]
 		if p.userRe.MatchString(line) {
-			if p.debug { // @debug
+			if p.opt.Debug { // @debug
 				l.Println("user (bad format)")
 			}
 			m := p.userRe.FindStringSubmatch(line)
@@ -145,14 +146,14 @@ func (p *SlowLogParser) parseHeader(line string) {
 			p.event.Host = m[2]
 		}
 	} else if strings.HasPrefix(line, "# User") {
-		if p.debug { // @debug
+		if p.opt.Debug { // @debug
 			l.Println("user")
 		}
 		m := p.userRe.FindStringSubmatch(line)
 		p.event.User = m[1]
 		p.event.Host = m[2]
 	} else if strings.HasPrefix(line, "# admin") {
-		if p.debug { // @debug
+		if p.opt.Debug { // @debug
 			l.Println("admin command")
 		}
 		p.event.Admin = true
@@ -162,7 +163,7 @@ func (p *SlowLogParser) parseHeader(line string) {
 		// admin commands should be the last line of the event.
 		p.sendEvent(false, false)
 	} else {
-		if p.debug { // @debug
+		if p.opt.Debug { // @debug
 			l.Println("metrics")
 		}
 		m := p.metricsRe.FindAllStringSubmatch(line, -1)
@@ -200,19 +201,19 @@ func (p *SlowLogParser) parseQuery(line string) {
 	}
 
 	if p.queryLines == 0 && strings.HasPrefix(line, "use ") {
-		if p.debug { // @debug
+		if p.opt.Debug { // @debug
 			l.Println("use db")
 		}
 		db := strings.TrimPrefix(line, "use ")
 		db = strings.TrimRight(db, ";")
 		p.event.Db = db
 	} else if p.setRe.MatchString(line) {
-		if p.debug { // @debug
+		if p.opt.Debug { // @debug
 			l.Println("set var")
 		}
 		// @todo ignore or use these lines?
 	} else {
-		if p.debug { // @debug
+		if p.opt.Debug { // @debug
 			l.Println("query")
 		}
 		if p.queryLines > 0 {
@@ -225,7 +226,7 @@ func (p *SlowLogParser) parseQuery(line string) {
 }
 
 func (p *SlowLogParser) sendEvent(inHeader bool, inQuery bool) {
-	if p.debug { // @debug
+	if p.opt.Debug { // @debug
 		l.Println("send event")
 	}
 

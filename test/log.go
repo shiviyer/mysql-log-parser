@@ -13,9 +13,9 @@ import (
 
 var Sample = os.Getenv("GOPATH") + "/src/github.com/percona/percona-go-mysql/test/logs/"
 
-func ParseSlowLog(filename string, debug bool) *[]log.Event {
+func ParseSlowLog(filename string, o parser.Options) *[]log.Event {
 	file, err := os.Open(Sample + filename)
-	p := parser.NewSlowLogParser(file, debug)
+	p := parser.NewSlowLogParser(file, o)
 	if err != nil {
 		l.Fatal(err)
 	}
