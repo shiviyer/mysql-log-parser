@@ -737,7 +737,7 @@ func (s *SlowLogTestSuite) TestParserSlowLog008(t *C) {
 // Filter admin commands
 func (s *SlowLogTestSuite) TestParserSlowLog009(t *C) {
 	opt := parser.Options{
-		FilterAdminCommands: map[string]bool{
+		FilterAdminCommand: map[string]bool{
 			"Quit": true,
 		},
 	}
