@@ -1,8 +1,8 @@
 package log_test
 
 import (
-	//	"fmt"
 	"github.com/percona/percona-go-mysql/log"
+	"github.com/percona/percona-go-mysql/log/parser"
 	"github.com/percona/percona-go-mysql/test"
 	. "launchpad.net/gocheck"
 	"testing"
@@ -430,7 +430,7 @@ var _ = Suite(&EventStatsTestSuite{})
 
 func (s *EventStatsTestSuite) TestEventStats(t *C) {
 	stats := log.NewEventStats()
-	events := testlog.ParseSlowLog("slow001.log", false)
+	events := testlog.ParseSlowLog("slow001.log", parser.Options{})
 	for _, e := range *events {
 		stats.Add(&e)
 	}
