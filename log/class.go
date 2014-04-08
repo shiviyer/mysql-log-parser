@@ -44,6 +44,13 @@ type QueryClass struct {
 	Fingerprint  string
 	Metrics      *EventStats
 	TotalQueries uint64
+	Example      Example
+}
+
+type Example struct {
+	QueryTime float64
+	Query     string
+	Ts        string `json:",omitempty"`
 }
 
 func NewQueryClass(classId string, fingerprint string) *QueryClass {
@@ -59,6 +66,21 @@ func NewQueryClass(classId string, fingerprint string) *QueryClass {
 func (c *QueryClass) AddEvent(e *Event) {
 	c.TotalQueries++
 	c.Metrics.Add(e)
+	if n, ok := e.TimeMetrics["Query_time"]; ok {
+		if float64(n) > c.Example.QueryTime {
+			c.Example.QueryTime = float64(n)
+			c.Example.Query = e.Query
+			if e.Ts != "" {
+				if t, err := time.Parse("060102 15:04:05", e.Ts); err != nil {
+					c.Example.Ts = ""
+				} else {
+					c.Example.Ts = t.Format("2006-01-02 15:04:05")
+				}
+			} else {
+				c.Example.Ts = ""
+			}
+		}
+	}
 }
 
 func (c *QueryClass) Finalize() {
