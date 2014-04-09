@@ -188,6 +188,11 @@ func (p *SlowLogParser) parseHeader(line string) {
 				}
 			} else if smv[1] == "Schema" {
 				p.event.Db = smv[2]
+			} else if smv[1] == "Log_slow_rate_type" {
+				p.event.RateType = smv[2]
+			} else if smv[1] == "Log_slow_rate_limit" {
+				val, _ := strconv.ParseUint(smv[2], 10, 64)
+				p.event.RateLimit = byte(val)
 			} else {
 				// integer value
 				val, _ := strconv.ParseUint(smv[2], 10, 64)

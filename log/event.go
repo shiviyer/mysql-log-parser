@@ -35,6 +35,8 @@ type Event struct {
 	User          string
 	Host          string
 	Db            string
+	RateType      string             // Percona Server rate limit type
+	RateLimit     byte               // Percona Server rate limit
 	TimeMetrics   map[string]float32 // *_time and *_wait metrics
 	NumberMetrics map[string]uint64  // most metrics
 	BoolMetrics   map[string]bool    // yes/no metrics

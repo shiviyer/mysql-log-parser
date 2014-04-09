@@ -776,3 +776,129 @@ func (s *SlowLogTestSuite) TestParserSlowLog009(t *C) {
 		t.Error(diff)
 	}
 }
+
+// Rate limit
+func (s *SlowLogTestSuite) TestParserSlowLog011(t *C) {
+	got := ParseSlowLog("slow011.log", s.opt)
+	expect := []log.Event{
+		{
+			Offset:    0,
+			Query:     "SELECT foo FROM bar WHERE id=1",
+			Db:        "maindb",
+			Host:      "localhost",
+			User:      "user1",
+			Ts:        "131128  1:05:31",
+			RateType:  "query",
+			RateLimit: 2,
+			TimeMetrics: map[string]float32{
+				"Query_time":           0.000228,
+				"Lock_time":            0.000114,
+				"InnoDB_IO_r_wait":     0.000000,
+				"InnoDB_rec_lock_wait": 0.000000,
+				"InnoDB_queue_wait":    0.000000,
+			},
+			NumberMetrics: map[string]uint64{
+				"Rows_sent":             1,
+				"Rows_examined":         1,
+				"Rows_affected":         0,
+				"Bytes_sent":            545,
+				"Tmp_tables":            0,
+				"Tmp_disk_tables":       0,
+				"Tmp_table_sizes":       0,
+				"Merge_passes":          0,
+				"InnoDB_IO_r_ops":       0,
+				"InnoDB_IO_r_bytes":     0,
+				"InnoDB_pages_distinct": 2,
+			},
+			BoolMetrics: map[string]bool{
+				"QC_Hit":            false,
+				"Full_scan":         false,
+				"Full_join":         false,
+				"Tmp_table":         false,
+				"Tmp_table_on_disk": false,
+				"Filesort":          false,
+				"Filesort_on_disk":  false,
+			},
+		},
+		{
+			Offset:    733,
+			Query:     "SELECT foo FROM bar WHERE id=2",
+			Db:        "maindb",
+			Host:      "localhost",
+			User:      "user1",
+			RateType:  "query",
+			RateLimit: 2,
+			TimeMetrics: map[string]float32{
+				"Query_time":           0.000237,
+				"Lock_time":            0.000122,
+				"InnoDB_IO_r_wait":     0.000000,
+				"InnoDB_rec_lock_wait": 0.000000,
+				"InnoDB_queue_wait":    0.000000,
+			},
+			NumberMetrics: map[string]uint64{
+				"Rows_sent":             1,
+				"Rows_examined":         1,
+				"Rows_affected":         0,
+				"Bytes_sent":            545,
+				"Tmp_tables":            0,
+				"Tmp_disk_tables":       0,
+				"Tmp_table_sizes":       0,
+				"Merge_passes":          0,
+				"InnoDB_IO_r_ops":       0,
+				"InnoDB_IO_r_bytes":     0,
+				"InnoDB_pages_distinct": 2,
+			},
+			BoolMetrics: map[string]bool{
+				"QC_Hit":            false,
+				"Full_scan":         false,
+				"Full_join":         false,
+				"Tmp_table":         false,
+				"Tmp_table_on_disk": false,
+				"Filesort":          false,
+				"Filesort_on_disk":  false,
+			},
+		},
+		{
+			Offset:    1441,
+			Query:     "INSERT INTO foo VALUES (NULL, 3)",
+			Db:        "maindb",
+			Host:      "localhost",
+			User:      "user1",
+			RateType:  "query",
+			RateLimit: 2,
+			TimeMetrics: map[string]float32{
+				"Query_time":           0.000165,
+				"Lock_time":            0.000048,
+				"InnoDB_IO_r_wait":     0.000000,
+				"InnoDB_rec_lock_wait": 0.000000,
+				"InnoDB_queue_wait":    0.000000,
+			},
+			NumberMetrics: map[string]uint64{
+				"Rows_sent":             5,
+				"Rows_examined":         10,
+				"Rows_affected":         0,
+				"Bytes_sent":            481,
+				"Tmp_tables":            0,
+				"Tmp_disk_tables":       0,
+				"Tmp_table_sizes":       0,
+				"Merge_passes":          0,
+				"InnoDB_IO_r_ops":       0,
+				"InnoDB_IO_r_bytes":     0,
+				"InnoDB_pages_distinct": 3,
+			},
+			BoolMetrics: map[string]bool{
+				"QC_Hit":            false,
+				"Full_scan":         false,
+				"Full_join":         false,
+				"Tmp_table":         false,
+				"Tmp_table_on_disk": false,
+				"Filesort":          true,
+				"Filesort_on_disk":  false,
+			},
+		},
+	}
+	if same, diff := IsDeeply(got, &expect); !same {
+		Dump(got)
+		t.Error(diff)
+	}
+}
