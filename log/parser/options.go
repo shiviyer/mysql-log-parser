@@ -1,6 +1,7 @@
 package parser
 
 type Options struct {
-	Debug              bool
+	ExampleQueries     bool
 	FilterAdminCommand map[string]bool
+	Debug              bool
 }

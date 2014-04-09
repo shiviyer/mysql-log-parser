@@ -72,7 +72,8 @@ type QueryClass struct {
 	Fingerprint  string
 	Metrics      *EventStats
 	TotalQueries uint64
-	Example      Example
+	Example      Example `json:",omitempty"`
+	example      bool
 }
 
 type Example struct {
@@ -81,12 +82,13 @@ type Example struct {
 	Ts        string `json:",omitempty"`
 }
 
-func NewQueryClass(classId string, fingerprint string) *QueryClass {
+func NewQueryClass(classId string, fingerprint string, example bool) *QueryClass {
 	class := &QueryClass{
 		Id:           classId,
 		Fingerprint:  fingerprint,
 		Metrics:      NewEventStats(),
 		TotalQueries: 0,
+		example:      example,
 	}
 	return class
 }
@@ -94,18 +96,21 @@ func NewQueryClass(classId string, fingerprint string) *QueryClass {
 func (c *QueryClass) AddEvent(e *Event) {
 	c.TotalQueries++
 	c.Metrics.Add(e)
-	if n, ok := e.TimeMetrics["Query_time"]; ok {
-		if float64(n) > c.Example.QueryTime {
-			c.Example.QueryTime = float64(n)
-			c.Example.Query = e.Query
-			if e.Ts != "" {
-				if t, err := time.Parse("060102 15:04:05", e.Ts); err != nil {
-					c.Example.Ts = ""
+
+	if c.example {
+		if n, ok := e.TimeMetrics["Query_time"]; ok {
+			if float64(n) > c.Example.QueryTime {
+				c.Example.QueryTime = float64(n)
+				c.Example.Query = e.Query
+				if e.Ts != "" {
+					if t, err := time.Parse("060102 15:04:05", e.Ts); err != nil {
+						c.Example.Ts = ""
+					} else {
+						c.Example.Ts = t.Format("2006-01-02 15:04:05")
+					}
 				} else {
-					c.Example.Ts = t.Format("2006-01-02 15:04:05")
+					c.Example.Ts = ""
 				}
-			} else {
-				c.Example.Ts = ""
 			}
 		}
 	}
