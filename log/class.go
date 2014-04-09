@@ -1,6 +1,7 @@
 package log
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -9,11 +10,23 @@ import (
 /////////////////////////////////////////////////////////////////////////////
 
 type GlobalClass struct {
-	startTs       time.Time
-	endTs         time.Time
 	TotalQueries  uint64
 	UniqueQueries uint64
+	RateType      string `json:",omitempty"`
+	RateLimit     byte   `json:",omitempty"`
 	Metrics       *EventStats
+}
+
+type MixedRateLimitsError struct {
+	PrevRateType  string
+	PrevRateLimit byte
+	CurRateType   string
+	CurRateLimit  byte
+}
+
+func (e MixedRateLimitsError) Error() string {
+	return fmt.Sprintf("Mixed rate limits: have %s:%d, got %s:%d",
+		e.PrevRateType, e.PrevRateLimit, e.CurRateType, e.CurRateLimit)
 }
 
 func NewGlobalClass() *GlobalClass {
@@ -25,9 +38,24 @@ func NewGlobalClass() *GlobalClass {
 	return class
 }
 
-func (c *GlobalClass) AddEvent(e *Event) {
+func (c *GlobalClass) AddEvent(e *Event) error {
+	var err error
+	if e.RateType != "" {
+		if c.RateType == "" {
+			// Set rate limit for this gg
+			c.RateType = e.RateType
+			c.RateLimit = e.RateLimit
+		} else {
+			// Make sure the rate limit hasn't changed because it's not clear
+			// how to handle a mix of rate limits.
+			if c.RateType != e.RateType && c.RateLimit != e.RateLimit {
+				err = MixedRateLimitsError{c.RateType, c.RateLimit, e.RateType, e.RateLimit}
+			}
+		}
+	}
 	c.TotalQueries++
 	c.Metrics.Add(e)
+	return err
 }
 
 func (c *GlobalClass) Finalize(UniqueQueries uint64) {

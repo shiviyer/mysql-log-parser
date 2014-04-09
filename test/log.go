@@ -15,7 +15,11 @@ var Sample = os.Getenv("GOPATH") + "/src/github.com/percona/percona-go-mysql/tes
 
 func ParseSlowLog(filename string, o parser.Options) *[]log.Event {
 	file, err := os.Open(Sample + filename)
-	p := parser.NewSlowLogParser(file, o)
+	if err != nil {
+		l.Fatal(err)
+	}
+	stopChan := make(<-chan bool, 1)
+	p := parser.NewSlowLogParser(file, stopChan, o)
 	if err != nil {
 		l.Fatal(err)
 	}

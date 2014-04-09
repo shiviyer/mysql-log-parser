@@ -484,6 +484,7 @@ func (s *EventStatsTestSuite) TestSlow001(t *C) {
 	}
 }
 
+// Test p95 and median.
 func (s *EventStatsTestSuite) TestSlow010(t *C) {
 	stats := log.NewEventStats()
 	events := testlog.ParseSlowLog("slow010.log", parser.Options{})

@@ -13,9 +13,10 @@ import (
 )
 
 type SlowLogParser struct {
-	opt         Options
-	file        *os.File
-	debug       bool
+	file     *os.File
+	stopChan <-chan bool
+	opt      Options
+	// --
 	scanner     *bufio.Scanner
 	EventChan   chan *log.Event
 	inHeader    bool
@@ -24,6 +25,7 @@ type SlowLogParser struct {
 	queryLines  uint64
 	bytesRead   uint64
 	lineOffset  uint64
+	stopped     bool
 	event       *log.Event
 	timeRe      *regexp.Regexp
 	userRe      *regexp.Regexp
@@ -32,7 +34,7 @@ type SlowLogParser struct {
 	setRe       *regexp.Regexp
 }
 
-func NewSlowLogParser(file *os.File, opt Options) *SlowLogParser {
+func NewSlowLogParser(file *os.File, stopChan <-chan bool, opt Options) *SlowLogParser {
 	scanner := bufio.NewScanner(file)
 	if opt.Debug { // @debug
 		l.SetFlags(l.Ltime | l.Lmicroseconds)
@@ -40,6 +42,7 @@ func NewSlowLogParser(file *os.File, opt Options) *SlowLogParser {
 		l.Println("parsing " + file.Name())
 	}
 	p := &SlowLogParser{
+		stopChan:    stopChan,
 		opt:         opt,
 		file:        file,
 		scanner:     scanner,
@@ -63,7 +66,15 @@ func NewSlowLogParser(file *os.File, opt Options) *SlowLogParser {
 func (p *SlowLogParser) Run() {
 	defer close(p.EventChan)
 
-	for p.scanner.Scan() {
+SCANNER_LOOP:
+	for !p.stopped && p.scanner.Scan() {
+		select {
+		case <-p.stopChan:
+			p.stopped = true
+			break SCANNER_LOOP
+		default:
+		}
+
 		line := p.scanner.Text()
 
 		lineLen := uint64(len(line)) + 1 // +1 for \n
@@ -90,7 +101,7 @@ func (p *SlowLogParser) Run() {
 		}
 	}
 
-	if p.queryLines > 0 {
+	if !p.stopped && p.queryLines > 0 {
 		p.sendEvent(false, false)
 	}
 
@@ -245,7 +256,12 @@ func (p *SlowLogParser) sendEvent(inHeader bool, inQuery bool) {
 	p.event.Query = strings.TrimSuffix(p.event.Query, ";")
 
 	// Send the event.  This will block.
-	p.EventChan <- p.event
+	select {
+	case p.EventChan <- p.event:
+	case <-p.stopChan:
+		p.stopped = true
+		return
+	}
 
 	// Make a new event and reset our metadata.
 	p.event = log.NewEvent()
