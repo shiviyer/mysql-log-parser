@@ -130,6 +130,10 @@ func ConvertSlowLogTs(ts string) *time.Time {
 }
 
 func (p *SlowLogParser) parseHeader(line string) {
+	if p.opt.Debug { // @debug
+		l.Println("header")
+	}
+
 	if !strings.HasPrefix(line, "#") {
 		p.inHeader = false
 		p.inQuery = true
@@ -164,21 +168,7 @@ func (p *SlowLogParser) parseHeader(line string) {
 		p.event.User = m[1]
 		p.event.Host = m[2]
 	} else if strings.HasPrefix(line, "# admin") {
-		if p.opt.Debug { // @debug
-			l.Println("admin command")
-		}
-		p.event.Admin = true
-		m := p.adminRe.FindStringSubmatch(line)
-		p.event.Query = m[1]
-		p.event.Query = strings.TrimSuffix(p.event.Query, ";") // makes FilterAdminCommand work
-
-		// admin commands should be the last line of the event.
-		if filtered := p.opt.FilterAdminCommand[p.event.Query]; !filtered {
-			p.sendEvent(false, false)
-		} else {
-			p.inHeader = false
-			p.inQuery = false
-		}
+		p.parseAdmin(line)
 	} else {
 		if p.opt.Debug { // @debug
 			l.Println("metrics")
@@ -214,7 +204,17 @@ func (p *SlowLogParser) parseHeader(line string) {
 }
 
 func (p *SlowLogParser) parseQuery(line string) {
-	if strings.HasPrefix(line, "#") || p.IsMetaLine(line) {
+	if p.opt.Debug { // @debug
+		l.Println("query")
+	}
+
+	if strings.HasPrefix(line, "# admin") {
+		p.parseAdmin(line)
+		return
+	} else if strings.HasPrefix(line, "#") || p.IsMetaLine(line) {
+		if p.opt.Debug { // @debug
+			l.Println("next event")
+		}
 		p.inHeader = true
 		p.inQuery = false
 		p.sendEvent(true, false)
@@ -244,6 +244,27 @@ func (p *SlowLogParser) parseQuery(line string) {
 			p.event.Query = line
 		}
 		p.queryLines++
+	}
+}
+
+func (p *SlowLogParser) parseAdmin(line string) {
+	if p.opt.Debug { // @debug
+		l.Println("admin")
+	}
+	p.event.Admin = true
+	m := p.adminRe.FindStringSubmatch(line)
+	p.event.Query = m[1]
+	p.event.Query = strings.TrimSuffix(p.event.Query, ";") // makes FilterAdminCommand work
+
+	// admin commands should be the last line of the event.
+	if filtered := p.opt.FilterAdminCommand[p.event.Query]; !filtered {
+		if p.opt.Debug { // @debug
+			l.Println("not filtered")
+		}
+		p.sendEvent(false, false)
+	} else {
+		p.inHeader = false
+		p.inQuery = false
 	}
 }
 

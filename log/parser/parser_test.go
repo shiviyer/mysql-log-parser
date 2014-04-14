@@ -902,3 +902,60 @@ func (s *SlowLogTestSuite) TestParserSlowLog011(t *C) {
 		t.Error(diff)
 	}
 }
+
+func (s *SlowLogTestSuite) TestParserSlowLog012(t *C) {
+	got := ParseSlowLog("slow012.log", s.opt)
+	expect := []log.Event{
+		{
+			Query:  "select * from mysql.user",
+			Db:     "",
+			Host:   "localhost",
+			User:   "msandbox",
+			Offset: 0,
+			TimeMetrics: map[string]float32{
+				"Query_time": 0.000214,
+				"Lock_time":  0.000086,
+			},
+			NumberMetrics: map[string]uint64{
+				"Rows_sent":     2,
+				"Rows_examined": 2,
+			},
+		},
+		{
+			Query:  "Quit",
+			Admin:  true,
+			Db:     "",
+			Host:   "localhost",
+			User:   "msandbox",
+			Offset: 186,
+			TimeMetrics: map[string]float32{
+				"Query_time": 0.000016,
+				"Lock_time":  0.000000,
+			},
+			NumberMetrics: map[string]uint64{
+				"Rows_sent":     2,
+				"Rows_examined": 2,
+			},
+		},
+		{
+			Query:  "SELECT @@max_allowed_packet",
+			Db:     "dev_pct",
+			Host:   "localhost",
+			User:   "msandbox",
+			Offset: 376,
+			Ts:     "140413 19:34:13",
+			TimeMetrics: map[string]float32{
+				"Query_time": 0.000127,
+				"Lock_time":  0.000000,
+			},
+			NumberMetrics: map[string]uint64{
+				"Rows_sent":     1,
+				"Rows_examined": 0,
+			},
+		},
+	}
+	if same, diff := IsDeeply(got, &expect); !same {
+		Dump(got)
+		t.Error(diff)
+	}
+}
