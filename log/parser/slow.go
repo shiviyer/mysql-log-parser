@@ -34,6 +34,10 @@ type SlowLogParser struct {
 	setRe       *regexp.Regexp
 }
 
+const (
+	FORWARD_SLASH = 0x2F
+)
+
 func NewSlowLogParser(file *os.File, stopChan <-chan bool, opt Options) *SlowLogParser {
 	scanner := bufio.NewScanner(file)
 	if opt.Debug { // @debug
@@ -77,7 +81,8 @@ SCANNER_LOOP:
 
 		line := p.scanner.Text()
 
-		lineLen := uint64(len(line)) + 1 // +1 for \n
+		realLen := len(line)
+		lineLen := uint64(realLen) + 1 // +1 for \n
 		p.bytesRead += lineLen
 		p.lineOffset = p.bytesRead - lineLen
 		if p.lineOffset != 0 {
@@ -90,6 +95,21 @@ SCANNER_LOOP:
 			fmt.Println()
 			l.Printf("+%d line: %s", p.lineOffset, line)
 		}
+
+		// Filter out meta lines:
+		//   /usr/local/bin/mysqld, Version: 5.6.15-62.0-tokudb-7.1.0-tokudb-log (binary). started with:
+		//   Tcp port: 3306  Unix socket: /var/lib/mysql/mysql.sock
+		//   Time                 Id Command    Argument
+		if realLen >= 20 && ((line[0] == FORWARD_SLASH && line[realLen-5:realLen] == "with:") ||
+			(line[0:5] == "Time ") ||
+			(line[0:4] == "Tcp ") ||
+			(line[0:4] == "TCP ")) {
+			if p.opt.Debug { // @debug
+				l.Println("meta")
+			}
+			continue
+		}
+
 		if p.inHeader {
 			p.parseHeader(line)
 		} else if p.inQuery {
@@ -109,16 +129,6 @@ SCANNER_LOOP:
 		fmt.Println()
 		l.Printf("done")
 	}
-}
-
-func (p *SlowLogParser) IsMetaLine(line string) bool {
-	if strings.HasPrefix(line, "/") || strings.HasPrefix(line, "Time") || strings.HasPrefix(line, "Tcp") || strings.HasPrefix(line, "TCP") {
-		if p.opt.Debug { // @debug
-			l.Println("meta")
-		}
-		return true
-	}
-	return false
 }
 
 func ConvertSlowLogTs(ts string) *time.Time {
@@ -211,7 +221,7 @@ func (p *SlowLogParser) parseQuery(line string) {
 	if strings.HasPrefix(line, "# admin") {
 		p.parseAdmin(line)
 		return
-	} else if strings.HasPrefix(line, "#") || p.IsMetaLine(line) {
+	} else if strings.HasPrefix(line, "#") {
 		if p.opt.Debug { // @debug
 			l.Println("next event")
 		}

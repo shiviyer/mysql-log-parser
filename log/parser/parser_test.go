@@ -779,7 +779,7 @@ func (s *SlowLogTestSuite) TestParserSlowLog009(t *C) {
 
 // Rate limit
 func (s *SlowLogTestSuite) TestParserSlowLog011(t *C) {
-	got := ParseSlowLog("slow011.log", s.opt)
+	got := ParseSlowLog("slow011.log", parser.Options{})
 	expect := []log.Event{
 		{
 			Offset:    0,
@@ -951,6 +951,117 @@ func (s *SlowLogTestSuite) TestParserSlowLog012(t *C) {
 			NumberMetrics: map[string]uint64{
 				"Rows_sent":     1,
 				"Rows_examined": 0,
+			},
+		},
+	}
+	if same, diff := IsDeeply(got, &expect); !same {
+		Dump(got)
+		t.Error(diff)
+	}
+}
+
+// Stack overflow bug due to meta lines.
+func (s *SlowLogTestSuite) TestParserSlowLog013(t *C) {
+	got := ParseSlowLog("slow013.log", parser.Options{Debug: false})
+	expect := []log.Event{
+		{
+			Offset: 0,
+			Ts:     "140224 22:39:34",
+			Query:  "select 950,q.* from qcm q INTO OUTFILE '/mnt/pct/exp/qcm_db950.txt'",
+			User:   "root",
+			Host:   "localhost",
+			Db:     "db950",
+			TimeMetrics: map[string]float32{
+				"Query_time": 21.876617,
+				"Lock_time":  0.002991,
+			},
+			NumberMetrics: map[string]uint64{
+				"Bytes_sent":    14,
+				"Killed":        0,
+				"Last_errno":    0,
+				"Rows_affected": 1605306,
+				"Rows_examined": 1605306,
+				"Rows_sent":     1605306,
+			},
+		},
+		{
+			Offset: 354,
+			Ts:     "140224 22:39:59",
+			Query:  "select 961,q.* from qcm q INTO OUTFILE '/mnt/pct/exp/qcm_db961.txt'",
+			User:   "root",
+			Host:   "localhost",
+			Db:     "db961",
+			TimeMetrics: map[string]float32{
+				"Query_time": 20.304537,
+				"Lock_time":  0.103324,
+			},
+			NumberMetrics: map[string]uint64{
+				"Bytes_sent":    14,
+				"Killed":        0,
+				"Last_errno":    0,
+				"Rows_affected": 1197472,
+				"Rows_examined": 1197472,
+				"Rows_sent":     1197472,
+			},
+		},
+		{
+			Offset: 6139,
+			Ts:     "140311 16:07:40",
+			Query:  "select count(*) into @discard from `information_schema`.`PARTITIONS`",
+			User:   "debian-sys-maint",
+			Host:   "localhost",
+			Db:     "",
+			TimeMetrics: map[string]float32{
+				"Query_time": 94.38144,
+				"Lock_time":  0.000174,
+			},
+			NumberMetrics: map[string]uint64{
+				"Bytes_sent":    11,
+				"Killed":        0,
+				"Last_errno":    1146,
+				"Rows_affected": 1,
+				"Rows_examined": 17799,
+				"Rows_sent":     0,
+			},
+		},
+		{
+			Offset: 6667,
+			Ts:     "140312 20:28:40",
+			Query:  "select 1,q.* from qcm q INTO OUTFILE '/mnt/pct/exp/qcm_db1.txt'",
+			User:   "root",
+			Host:   "localhost",
+			Db:     "db1",
+			TimeMetrics: map[string]float32{
+				"Query_time": 407.54025,
+				"Lock_time":  0.122377,
+			},
+			NumberMetrics: map[string]uint64{
+				"Bytes_sent":    19,
+				"Killed":        0,
+				"Last_errno":    0,
+				"Rows_affected": 34621308,
+				"Rows_examined": 34621308,
+				"Rows_sent":     34621308,
+			},
+		},
+		{
+			Offset: 7015,
+			Ts:     "140312 20:29:40",
+			Query:  "select 1006,q.* from qcm q INTO OUTFILE '/mnt/pct/exp/qcm_db1006.txt'",
+			User:   "root",
+			Host:   "localhost",
+			Db:     "db1006",
+			TimeMetrics: map[string]float32{
+				"Query_time": 60.507698,
+				"Lock_time":  0.002719,
+			},
+			NumberMetrics: map[string]uint64{
+				"Bytes_sent":    14,
+				"Killed":        0,
+				"Last_errno":    0,
+				"Rows_affected": 4937738,
+				"Rows_examined": 4937738,
+				"Rows_sent":     4937738,
 			},
 		},
 	}
