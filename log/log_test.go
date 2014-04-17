@@ -439,42 +439,46 @@ func (s *EventStatsTestSuite) TestSlow001(t *C) {
 	expect := &log.EventStats{
 		TimeMetrics: map[string]*log.TimeStats{
 			"Lock_time": &log.TimeStats{
-				Cnt:   2,
-				Sum:   0,
-				Min:   0,
-				Avg:   0,
-				Med:   0,
-				Pct95: 0,
-				Max:   0,
+				Cnt:    2,
+				Sum:    0,
+				Min:    0,
+				Avg:    0,
+				Pct95:  0,
+				Stddev: 0, // @todo
+				Med:    0,
+				Max:    0,
 			},
 			"Query_time": &log.TimeStats{
-				Cnt:   2,
-				Sum:   4,
-				Min:   2,
-				Avg:   2,
-				Med:   2,
-				Pct95: 2,
-				Max:   2,
+				Cnt:    2,
+				Sum:    4,
+				Min:    2,
+				Avg:    2,
+				Pct95:  2,
+				Stddev: 0, // @todo
+				Med:    2,
+				Max:    2,
 			},
 		},
 		NumberMetrics: map[string]*log.NumberStats{
 			"Rows_examined": &log.NumberStats{
-				Cnt:   2,
-				Sum:   0,
-				Min:   0,
-				Avg:   0,
-				Med:   0,
-				Pct95: 0,
-				Max:   0,
+				Cnt:    2,
+				Sum:    0,
+				Min:    0,
+				Avg:    0,
+				Pct95:  0,
+				Stddev: 0, // @todo
+				Med:    0,
+				Max:    0,
 			},
 			"Rows_sent": &log.NumberStats{
-				Cnt:   2,
-				Sum:   2,
-				Min:   1,
-				Avg:   1,
-				Med:   1,
-				Pct95: 1,
-				Max:   1,
+				Cnt:    2,
+				Sum:    2,
+				Min:    1,
+				Avg:    1,
+				Pct95:  1,
+				Stddev: 0, // @todo
+				Med:    1,
+				Max:    1,
 			},
 		},
 	}
@@ -495,33 +499,36 @@ func (s *EventStatsTestSuite) TestSlow010(t *C) {
 	expect := &log.EventStats{
 		TimeMetrics: map[string]*log.TimeStats{
 			"Query_time": &log.TimeStats{
-				Cnt:   36,
-				Sum:   22.703689,
-				Min:   0.000002,
-				Avg:   0.630658,
-				Med:   0.192812, // pqd: 0.198537
-				Pct95: 2.034012, // pqd: 1.964363
-				Max:   3.034012,
+				Cnt:    36,
+				Sum:    22.703689,
+				Min:    0.000002,
+				Avg:    0.630658,
+				Pct95:  2.034012, // pqd: 1.964363
+				Stddev: 0,        // @todo
+				Med:    0.192812, // pqd: 0.198537
+				Max:    3.034012,
 			},
 			"Lock_time": &log.TimeStats{
-				Cnt:   36,
-				Sum:   0,
-				Min:   0,
-				Avg:   0,
-				Med:   0,
-				Pct95: 0,
-				Max:   0,
+				Cnt:    36,
+				Sum:    0,
+				Min:    0,
+				Avg:    0,
+				Pct95:  0,
+				Stddev: 0, // @todo
+				Med:    0,
+				Max:    0,
 			},
 		},
 		NumberMetrics: map[string]*log.NumberStats{
 			"Rows_sent": &log.NumberStats{
-				Cnt:   36,
-				Sum:   156,
-				Min:   0,
-				Avg:   4,
-				Med:   1, // pqd: 0
-				Pct95: 6, // pqd: 4
-				Max:   99,
+				Cnt:    36,
+				Sum:    156,
+				Min:    0,
+				Avg:    4,
+				Pct95:  6, // pqd: 4
+				Stddev: 0, // @todo
+				Med:    1, // pqd: 0
+				Max:    99,
 			},
 		},
 	}

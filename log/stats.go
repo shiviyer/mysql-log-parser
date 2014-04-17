@@ -11,25 +11,27 @@ type EventStats struct {
 }
 
 type TimeStats struct {
-	vals  []float64 `json:"-"`
-	Cnt   uint
-	Sum   float64
-	Min   float64
-	Avg   float64
-	Med   float64
-	Pct95 float64
-	Max   float64
+	vals   []float64 `json:"-"`
+	Cnt    uint
+	Sum    float64
+	Min    float64
+	Avg    float64
+	Pct95  float64
+	Stddev uint64
+	Med    float64
+	Max    float64
 }
 
 type NumberStats struct {
-	vals  []uint64 `json:"-"`
-	Cnt   uint
-	Sum   uint64
-	Min   uint64
-	Avg   uint64
-	Med   uint64
-	Pct95 uint64
-	Max   uint64
+	vals   []uint64 `json:"-"`
+	Cnt    uint
+	Sum    uint64
+	Min    uint64
+	Avg    uint64
+	Pct95  uint64
+	Stddev uint64
+	Med    uint64
+	Max    uint64
 }
 
 type BoolStats struct {
@@ -112,8 +114,9 @@ func (s *EventStats) Current() {
 
 		s.Min = s.vals[0]
 		s.Avg = s.Sum / float64(s.Cnt)
-		s.Med = s.vals[(50*s.Cnt)/100] // median = 50th percentile
 		s.Pct95 = s.vals[(95*s.Cnt)/100]
+		// s.Stddev = @todo
+		s.Med = s.vals[(50*s.Cnt)/100] // median = 50th percentile
 		s.Max = s.vals[s.Cnt-1]
 	}
 
@@ -122,8 +125,9 @@ func (s *EventStats) Current() {
 
 		s.Min = s.vals[0]
 		s.Avg = s.Sum / uint64(s.Cnt)
-		s.Med = s.vals[(50*s.Cnt)/100] // median = 50th percentile
 		s.Pct95 = s.vals[(95*s.Cnt)/100]
+		// s.Stddev = @todo
+		s.Med = s.vals[(50*s.Cnt)/100] // median = 50th percentile
 		s.Max = s.vals[s.Cnt-1]
 	}
 }
