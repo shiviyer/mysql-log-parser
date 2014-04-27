@@ -271,8 +271,6 @@ func (s *FingerprintTestSuite) TestFingerprintValueList(t *C) {
 /////////////////////////////////////////////////////////////////////////////
 
 func (s *FingerprintTestSuite) TestFingerprintOrderBy(t *C) {
-	t.Skip("Fingerprint ORDER BY doesn't work yet")
-
 	var q string
 
 	// Remove ASC from ORDER BY
@@ -285,23 +283,27 @@ func (s *FingerprintTestSuite) TestFingerprintOrderBy(t *C) {
 	)
 
 	// Remove only ASC from ORDER BY
-	q = "select * from t where i=1 order by a, b ASC, d DESC, e asc"
-	t.Check(
-		log.Fingerprint(q),
-		Equals,
-		"select * from t where i=? order by a, b, d desc, e",
-	)
+	/*
+		q = "select * from t where i=1 order by a, b ASC, d DESC, e asc"
+		t.Check(
+			log.Fingerprint(q),
+			Equals,
+			"select * from t where i=? order by a, b, d desc, e",
+		)
+	*/
 
 	// Remove ASC from spacey ORDER BY
-	q = `select * from t where i=1      order            by 
-		  a,  b          ASC, d    DESC,    
-								 
-								 e asc`
-	t.Check(
-		log.Fingerprint(q),
-		Equals,
-		"select * from t where i=? order by a, b, d desc, e",
-	)
+	/*
+		q = `select * from t where i=1      order            by
+			  a,  b          ASC, d    DESC,
+
+									 e asc`
+		t.Check(
+			log.Fingerprint(q),
+			Equals,
+			"select * from t where i=? order by a, b, d desc, e",
+		)
+	*/
 }
 
 func (s *FingerprintTestSuite) TestFingerprintUnion(t *C) {
@@ -336,66 +338,43 @@ func (s *FingerprintTestSuite) TestFingerprintUnion(t *C) {
 	)
 }
 
-func (s *FingerprintTestSuite) TestFingerprintHugeQueries(t *C) {
-	t.Skip("Not testing huge queries yet")
-	/*
-		var q string
-		var f string
-
-		// Issue 322: mk-query-digest segfault before report
-		t.Check(
-			log.Fingerprint(q),
-			load_file("t/lib/samples/huge_replace_into_values.txt") ),
-		   Equals,
-		   `replace into `film_actor` values(?+)`
-		   "huge replace into values() (issue 322)",
-		)
-
-		t.Check(
-			log.Fingerprint(q),
-			load_file("t/lib/samples/huge_insert_ignore_into_values.txt") ),
-		   Equals,
-		   `insert ignore into `film_actor` values(?+)`
-		   "huge insert ignore into values() (issue 322)",
-		)
-
-		t.Check(
-			log.Fingerprint(q),
-			load_file("t/lib/samples/huge_explicit_cols_values.txt") ),
-		   Equals,
-		   `insert into foo (a,b,c,d,e,f,g,h) values(?+)`
-		   "huge insert with explicit columns before values() (issue 322)",
-		)
-	*/
-}
-
 func (s *FingerprintTestSuite) TestFingerprintOneLineComments(t *C) {
-	t.Skip("Stripping one-line comments doesn't work yet")
-
 	var q string
 
-	// Removes one-line comments in fingerprints
-	q = "select \n--bar\n foo"
-	t.Check(
-		log.Fingerprint(q),
-		Equals,
-		"select foo",
-	)
+	/*
 
-	// Removes one-line comments in fingerprint without mushing things together
-	q = "select foo--bar\nfoo"
-	t.Check(
-		log.Fingerprint(q),
-		Equals,
-		"select foo foo",
-	)
+		// Removes one-line comments in fingerprints
+		q = "select \n--bar\n foo"
+		t.Check(
+			log.Fingerprint(q),
+			Equals,
+			"select foo",
+		)
 
-	// Removes one-line EOL comments in fingerprints
-	q = "select foo -- bar\n"
+		// Removes one-line comments in fingerprint without mushing things together
+		q = "select foo--bar\nfoo"
+		t.Check(
+			log.Fingerprint(q),
+			Equals,
+			"select foo foo",
+		)
+
+		// Removes one-line EOL comments in fingerprints
+		q = "select foo -- bar\n"
+		t.Check(
+			log.Fingerprint(q),
+			Equals,
+			"select foo ",
+		)
+
+	*/
+
+	// Removes one-line # hash comments
+	q = "### Channels ###\n\u0009\u0009\u0009\u0009\u0009SELECT sourcetable, IF(f.lastcontent = 0, f.lastupdate, f.lastcontent) AS lastactivity,\n\u0009\u0009\u0009\u0009\u0009f.totalcount AS activity, type.class AS type,\n\u0009\u0009\u0009\u0009\u0009(f.nodeoptions \u0026 512) AS noUnsubscribe\n\u0009\u0009\u0009\u0009\u0009FROM node AS f\n\u0009\u0009\u0009\u0009\u0009INNER JOIN contenttype AS type ON type.contenttypeid = f.contenttypeid \n\n\u0009\u0009\u0009\u0009\u0009INNER JOIN subscribed AS sd ON sd.did = f.nodeid AND sd.userid = 15965\n UNION  ALL \n\n\u0009\u0009\u0009\u0009\u0009### Users ###\n\u0009\u0009\u0009\u0009\u0009SELECT f.name AS title, f.userid AS keyval, 'user' AS sourcetable, IFNULL(f.lastpost, f.joindate) AS lastactivity,\n\u0009\u0009\u0009\u0009\u0009f.posts as activity, 'Member' AS type,\n\u0009\u0009\u0009\u0009\u00090 AS noUnsubscribe\n\u0009\u0009\u0009\u0009\u0009FROM user AS f\n\u0009\u0009\u0009\u0009\u0009INNER JOIN userlist AS ul ON ul.relationid = f.userid AND ul.userid = 15965\n\u0009\u0009\u0009\u0009\u0009WHERE ul.type = 'f' AND ul.aq = 'yes'\n ORDER BY title ASC LIMIT 100"
 	t.Check(
 		log.Fingerprint(q),
 		Equals,
-		"select foo ",
+		"select sourcetable, if(f.lastcontent = ?, f.lastupdate, f.lastcontent) as lastactivity, f.totalcount as activity, type.class as type, (f.nodeoptions & ?) as nounsubscribe from node as f inner join contenttype as type on type.contenttypeid = f.contenttypeid inner join subscribed as sd on sd.did = f.nodeid and sd.userid = ? union all select f.name as title, f.userid as keyval, ? as sourcetable, ifnull(f.lastpost, f.joindate) as lastactivity, f.posts as activity, ? as type, ? as nounsubscribe from user as f inner join userlist as ul on ul.relationid = f.userid and ul.userid = ? where ul.type = ? and ul.aq = ? order by title limit ?",
 	)
 }
 
@@ -417,6 +396,13 @@ func (s *ChecksumTestSuite) TestChecksum(t *C) {
 		log.Checksum(f),
 		Equals,
 		"93CB22BB8F5ACDC3",
+	)
+
+	f = "select sourcetable, if(f.lastcontent = ?, f.lastupdate, f.lastcontent) as lastactivity, f.totalcount as activity, type.class as type, (f.nodeoptions & ?) as nounsubscribe from node as f inner join contenttype as type on type.contenttypeid = f.contenttypeid inner join subscribed as sd on sd.did = f.nodeid and sd.userid = ? union all select f.name as title, f.userid as keyval, ? as sourcetable, ifnull(f.lastpost, f.joindate) as lastactivity, f.posts as activity, ? as type, ? as nounsubscribe from user as f inner join userlist as ul on ul.relationid = f.userid and ul.userid = ? where ul.type = ? and ul.aq = ? order by title limit ?"
+	t.Check(
+		log.Checksum(f),
+		Equals,
+		"DB9EF18846547B8C",
 	)
 }
 

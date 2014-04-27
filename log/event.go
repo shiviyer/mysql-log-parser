@@ -18,10 +18,12 @@ var number1Re *regexp.Regexp = regexp.MustCompile(`\b[0-9+-][0-9a-f.xb+-]*`)
 var number2Re *regexp.Regexp = regexp.MustCompile(`[xb.+-]\?`)
 var valueListRe *regexp.Regexp = regexp.MustCompile(`\b(in|values?)(?:[\s,]*\([\s?,]*\))+`)
 var multiLineCommentRe *regexp.Regexp = regexp.MustCompile(`(?sm)/\*[^!].*?\*/`)
+var orderByAscRe *regexp.Regexp = regexp.MustCompile(`(?i)order by (\S+) asc\b`)
 
 // Go re doesn't support ?=, but I don't think slow logs can have -- comments,
 // so we don't need this for now
 //var oneLineCommentRe *regexp.Regexp = regexp.MustCompile(`(?:--|#)[^'"\r\n]*(?=[\r\n]|\z)`)
+var oneLineHashCommentRe *regexp.Regexp = regexp.MustCompile(`#[^'"\r\n]*([\r\n]|\z)`)
 var useDbRe *regexp.Regexp = regexp.MustCompile(`\Ause .+\z`)
 var unionRe *regexp.Regexp = regexp.MustCompile(`\b(select\s.*?)(?:(\sunion(?:\sall)?)\s$1)+`)
 var adminCmdRe *regexp.Regexp = regexp.MustCompile(`\Aadministrator command: `)
@@ -53,6 +55,7 @@ func NewEvent() *Event {
 func StripComments(q string) string {
 	// @todo See comment above
 	// q = oneLineCommentRe.ReplaceAllString(q, "")
+	q = oneLineHashCommentRe.ReplaceAllString(q, "")
 	q = multiLineCommentRe.ReplaceAllString(q, "")
 	return q
 }
@@ -83,10 +86,11 @@ func Fingerprint(q string) string {
 
 	// Lowercase the query then do case-sensitive replacements
 	q = strings.ToLower(q)
-	q = valueListRe.ReplaceAllString(q, "$1(?+)")      // in|value (...) -> in|value (?+)
-	q = unionRe.ReplaceAllString(q, "$1 /*repeat$2*/") // @todo
-	q = nullRe.ReplaceAllString(q, "?")                // null -> ?
-	q = limitRe.ReplaceAllString(q, "limit ?")         // limit N -> limit ?
+	q = valueListRe.ReplaceAllString(q, "$1(?+)")       // in|value (...) -> in|value (?+)
+	q = unionRe.ReplaceAllString(q, "$1 /*repeat$2*/")  // @todo
+	q = nullRe.ReplaceAllString(q, "?")                 // null -> ?
+	q = limitRe.ReplaceAllString(q, "limit ?")          // limit N -> limit ?
+	q = orderByAscRe.ReplaceAllString(q, "order by $1") // order by col asc -> order by col
 
 	return q
 }

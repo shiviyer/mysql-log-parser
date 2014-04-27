@@ -12,6 +12,18 @@ import (
 	"time"
 )
 
+// Regular expressions to match important lines in slow log.
+var timeRe = regexp.MustCompile(`Time: (\S+\s{1,2}\S+)`)
+var userRe = regexp.MustCompile(`User@Host: ([^\[]+|\[[^[]+\]).*?@ (\S*) \[(.*)\]`)
+var headerRe = regexp.MustCompile(`^#\s+[A-Z]`)
+var metricsRe = regexp.MustCompile(`(\w+): (\S+|\z)`)
+var adminRe = regexp.MustCompile(`command: (.+)`)
+var setRe = regexp.MustCompile(`SET (?:last_insert_id|insert_id|timestamp)`)
+
+const (
+	FORWARD_SLASH = 0x2F
+)
+
 type SlowLogParser struct {
 	file     *os.File
 	stopChan <-chan bool
@@ -27,20 +39,11 @@ type SlowLogParser struct {
 	lineOffset  uint64
 	stopped     bool
 	event       *log.Event
-	timeRe      *regexp.Regexp
-	userRe      *regexp.Regexp
-	metricsRe   *regexp.Regexp
-	adminRe     *regexp.Regexp
-	setRe       *regexp.Regexp
 }
-
-const (
-	FORWARD_SLASH = 0x2F
-)
 
 func NewSlowLogParser(file *os.File, stopChan <-chan bool, opt Options) *SlowLogParser {
 	scanner := bufio.NewScanner(file)
-	if opt.Debug { // @debug
+	if opt.Debug {
 		l.SetFlags(l.Ltime | l.Lmicroseconds)
 		fmt.Println()
 		l.Println("parsing " + file.Name())
@@ -58,11 +61,6 @@ func NewSlowLogParser(file *os.File, stopChan <-chan bool, opt Options) *SlowLog
 		bytesRead:   0,
 		lineOffset:  0,
 		event:       log.NewEvent(),
-		timeRe:      regexp.MustCompile(`Time: (\S+\s{1,2}\S+)`),
-		userRe:      regexp.MustCompile(`User@Host: ([^\[]+|\[[^[]+\]).*?@ (\S*) \[(.*)\]`),
-		metricsRe:   regexp.MustCompile(`(\w+): (\S+|\z)`),
-		adminRe:     regexp.MustCompile(`command: (.+)`),
-		setRe:       regexp.MustCompile(`SET (?:last_insert_id|insert_id|timestamp)`),
 	}
 	return p
 }
@@ -91,7 +89,7 @@ SCANNER_LOOP:
 			p.lineOffset += 1
 		}
 
-		if p.opt.Debug { // @debug
+		if p.opt.Debug {
 			fmt.Println()
 			l.Printf("+%d line: %s", p.lineOffset, line)
 		}
@@ -104,7 +102,7 @@ SCANNER_LOOP:
 			(line[0:5] == "Time ") ||
 			(line[0:4] == "Tcp ") ||
 			(line[0:4] == "TCP ")) {
-			if p.opt.Debug { // @debug
+			if p.opt.Debug {
 				l.Println("meta")
 			}
 			continue
@@ -114,7 +112,7 @@ SCANNER_LOOP:
 			p.parseHeader(line)
 		} else if p.inQuery {
 			p.parseQuery(line)
-		} else if strings.HasPrefix(line, "#") {
+		} else if headerRe.MatchString(line) {
 			p.inHeader = true
 			p.inQuery = false
 			p.parseHeader(line)
@@ -125,7 +123,7 @@ SCANNER_LOOP:
 		p.sendEvent(false, false)
 	}
 
-	if p.opt.Debug { // @debug
+	if p.opt.Debug {
 		fmt.Println()
 		l.Printf("done")
 	}
@@ -140,11 +138,11 @@ func ConvertSlowLogTs(ts string) *time.Time {
 }
 
 func (p *SlowLogParser) parseHeader(line string) {
-	if p.opt.Debug { // @debug
+	if p.opt.Debug {
 		l.Println("header")
 	}
 
-	if !strings.HasPrefix(line, "#") {
+	if !headerRe.MatchString(line) {
 		p.inHeader = false
 		p.inQuery = true
 		p.parseQuery(line)
@@ -157,35 +155,35 @@ func (p *SlowLogParser) parseHeader(line string) {
 	p.headerLines++
 
 	if strings.HasPrefix(line, "# Time") {
-		if p.opt.Debug { // @debug
+		if p.opt.Debug {
 			l.Println("time")
 		}
-		m := p.timeRe.FindStringSubmatch(line)
+		m := timeRe.FindStringSubmatch(line)
 		p.event.Ts = m[1]
-		if p.userRe.MatchString(line) {
-			if p.opt.Debug { // @debug
+		if userRe.MatchString(line) {
+			if p.opt.Debug {
 				l.Println("user (bad format)")
 			}
-			m := p.userRe.FindStringSubmatch(line)
+			m := userRe.FindStringSubmatch(line)
 			p.event.User = m[1]
 			p.event.Host = m[2]
 		}
 	} else if strings.HasPrefix(line, "# User") {
-		if p.opt.Debug { // @debug
+		if p.opt.Debug {
 			l.Println("user")
 		}
-		m := p.userRe.FindStringSubmatch(line)
+		m := userRe.FindStringSubmatch(line)
 		p.event.User = m[1]
 		p.event.Host = m[2]
 	} else if strings.HasPrefix(line, "# admin") {
 		p.parseAdmin(line)
 	} else {
-		if p.opt.Debug { // @debug
+		if p.opt.Debug {
 			l.Println("metrics")
 		}
-		m := p.metricsRe.FindAllStringSubmatch(line, -1)
+		m := metricsRe.FindAllStringSubmatch(line, -1)
 		for _, smv := range m {
-			// [String, Metric, Value], e.g. ["Query_time: 2" "Query_time" "2"]
+			// [String, Metric, Value], e.g. ["Query_time: 2", "Query_time", "2"]
 			if strings.HasSuffix(smv[1], "_time") || strings.HasSuffix(smv[1], "_wait") {
 				// microsecond value
 				val, _ := strconv.ParseFloat(smv[2], 32)
@@ -214,15 +212,15 @@ func (p *SlowLogParser) parseHeader(line string) {
 }
 
 func (p *SlowLogParser) parseQuery(line string) {
-	if p.opt.Debug { // @debug
+	if p.opt.Debug {
 		l.Println("query")
 	}
 
 	if strings.HasPrefix(line, "# admin") {
 		p.parseAdmin(line)
 		return
-	} else if strings.HasPrefix(line, "#") {
-		if p.opt.Debug { // @debug
+	} else if headerRe.MatchString(line) {
+		if p.opt.Debug {
 			l.Println("next event")
 		}
 		p.inHeader = true
@@ -233,19 +231,19 @@ func (p *SlowLogParser) parseQuery(line string) {
 	}
 
 	if p.queryLines == 0 && strings.HasPrefix(line, "use ") {
-		if p.opt.Debug { // @debug
+		if p.opt.Debug {
 			l.Println("use db")
 		}
 		db := strings.TrimPrefix(line, "use ")
 		db = strings.TrimRight(db, ";")
 		p.event.Db = db
-	} else if p.setRe.MatchString(line) {
-		if p.opt.Debug { // @debug
+	} else if setRe.MatchString(line) {
+		if p.opt.Debug {
 			l.Println("set var")
 		}
 		// @todo ignore or use these lines?
 	} else {
-		if p.opt.Debug { // @debug
+		if p.opt.Debug {
 			l.Println("query")
 		}
 		if p.queryLines > 0 {
@@ -258,17 +256,17 @@ func (p *SlowLogParser) parseQuery(line string) {
 }
 
 func (p *SlowLogParser) parseAdmin(line string) {
-	if p.opt.Debug { // @debug
+	if p.opt.Debug {
 		l.Println("admin")
 	}
 	p.event.Admin = true
-	m := p.adminRe.FindStringSubmatch(line)
+	m := adminRe.FindStringSubmatch(line)
 	p.event.Query = m[1]
 	p.event.Query = strings.TrimSuffix(p.event.Query, ";") // makes FilterAdminCommand work
 
 	// admin commands should be the last line of the event.
 	if filtered := p.opt.FilterAdminCommand[p.event.Query]; !filtered {
-		if p.opt.Debug { // @debug
+		if p.opt.Debug {
 			l.Println("not filtered")
 		}
 		p.sendEvent(false, false)
@@ -279,8 +277,12 @@ func (p *SlowLogParser) parseAdmin(line string) {
 }
 
 func (p *SlowLogParser) sendEvent(inHeader bool, inQuery bool) {
-	if p.opt.Debug { // @debug
+	if p.opt.Debug {
 		l.Println("send event")
+	}
+
+	if _, ok := p.event.TimeMetrics["Query_time"]; !ok {
+		panic("No Query_time in event")
 	}
 
 	// Clean up the event.
