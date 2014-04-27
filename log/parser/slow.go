@@ -42,12 +42,20 @@ type SlowLogParser struct {
 }
 
 func NewSlowLogParser(file *os.File, stopChan <-chan bool, opt Options) *SlowLogParser {
+	// Seek to the offset, if any.
+	// @todo error if start off > file size
+	if opt.StartOffset > 0 {
+		// @todo handle error
+		file.Seek(int64(opt.StartOffset), os.SEEK_SET)
+	}
+
 	scanner := bufio.NewScanner(file)
 	if opt.Debug {
 		l.SetFlags(l.Ltime | l.Lmicroseconds)
 		fmt.Println()
 		l.Println("parsing " + file.Name())
 	}
+
 	p := &SlowLogParser{
 		stopChan:    stopChan,
 		opt:         opt,
@@ -58,7 +66,7 @@ func NewSlowLogParser(file *os.File, stopChan <-chan bool, opt Options) *SlowLog
 		inQuery:     false,
 		headerLines: 0,
 		queryLines:  0,
-		bytesRead:   0,
+		bytesRead:   opt.StartOffset,
 		lineOffset:  0,
 		event:       log.NewEvent(),
 	}

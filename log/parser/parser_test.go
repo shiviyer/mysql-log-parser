@@ -1250,3 +1250,31 @@ func (s *SlowLogTestSuite) TestParserSlowLog014(t *C) {
 		t.Error(diff)
 	}
 }
+
+// Correct event offsets when parsing starts/resumes at an offset.
+func (s *SlowLogTestSuite) TestParserSlowLog001StartOffset(t *C) {
+	// 359 is the first byte of the second (of 2) events.
+	got := ParseSlowLog("slow001.log", parser.Options{StartOffset: 359})
+	expect := []log.Event{
+		{
+			Query:  `select sleep(2) from test.n`,
+			User:   "root",
+			Host:   "localhost",
+			Db:     "sakila",
+			Offset: 383,
+			TimeMetrics: map[string]float32{
+				"Query_time": 2,
+				"Lock_time":  0,
+			},
+			NumberMetrics: map[string]uint64{
+				"Rows_sent":     1,
+				"Rows_examined": 0,
+			},
+			BoolMetrics: map[string]bool{},
+		},
+	}
+	if same, diff := IsDeeply(got, &expect); !same {
+		Dump(got)
+		t.Error(diff)
+	}
+}
