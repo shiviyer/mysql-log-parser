@@ -2,8 +2,8 @@ package testlog
 
 import (
 	"fmt"
-	"github.com/percona/percona-go-mysql/log"
-	"github.com/percona/percona-go-mysql/log/parser"
+	"github.com/percona/mysql-log-parser/log"
+	"github.com/percona/mysql-log-parser/log/parser"
 	"launchpad.net/gocheck"
 	l "log"
 	"os"
@@ -11,7 +11,7 @@ import (
 	"reflect"
 )
 
-var Sample = os.Getenv("GOPATH") + "/src/github.com/percona/percona-go-mysql/test/logs/"
+var Sample = os.Getenv("GOPATH") + "/src/github.com/percona/mysql-log-parser/test/logs/"
 
 func ParseSlowLog(filename string, o parser.Options) *[]log.Event {
 	file, err := os.Open(Sample + filename)

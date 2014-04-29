@@ -1,9 +1,9 @@
 package parser_test
 
 import (
-	"github.com/percona/percona-go-mysql/log"
-	"github.com/percona/percona-go-mysql/log/parser"
-	. "github.com/percona/percona-go-mysql/test"
+	"github.com/percona/mysql-log-parser/log"
+	"github.com/percona/mysql-log-parser/log/parser"
+	. "github.com/percona/mysql-log-parser/test"
 	. "launchpad.net/gocheck"
 	"testing"
 )
