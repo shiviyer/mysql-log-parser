@@ -81,6 +81,7 @@ SCANNER_LOOP:
 		select {
 		case <-p.stopChan:
 			p.stopped = true
+			l.Println("--- STOP ---")
 			break SCANNER_LOOP
 		default:
 		}
@@ -131,9 +132,10 @@ SCANNER_LOOP:
 		p.sendEvent(false, false)
 	}
 
+	scanErr := p.scanner.Err()
 	if p.opt.Debug {
 		fmt.Println()
-		l.Printf("done")
+		l.Printf("done, error: %s\n", scanErr)
 	}
 }
 
