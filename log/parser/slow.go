@@ -29,7 +29,6 @@ type SlowLogParser struct {
 	stopChan <-chan bool
 	opt      Options
 	// --
-	scanner     *bufio.Scanner
 	EventChan   chan *log.Event
 	inHeader    bool
 	inQuery     bool
@@ -49,7 +48,6 @@ func NewSlowLogParser(file *os.File, stopChan <-chan bool, opt Options) *SlowLog
 		file.Seek(int64(opt.StartOffset), os.SEEK_SET)
 	}
 
-	scanner := bufio.NewScanner(file)
 	if opt.Debug {
 		l.SetFlags(l.Ltime | l.Lmicroseconds)
 		fmt.Println()
@@ -60,7 +58,6 @@ func NewSlowLogParser(file *os.File, stopChan <-chan bool, opt Options) *SlowLog
 		stopChan:    stopChan,
 		opt:         opt,
 		file:        file,
-		scanner:     scanner,
 		EventChan:   make(chan *log.Event),
 		inHeader:    false,
 		inQuery:     false,
@@ -76,20 +73,24 @@ func NewSlowLogParser(file *os.File, stopChan <-chan bool, opt Options) *SlowLog
 func (p *SlowLogParser) Run() {
 	defer close(p.EventChan)
 
+	r := bufio.NewReader(p.file)
+
 SCANNER_LOOP:
-	for !p.stopped && p.scanner.Scan() {
+	for !p.stopped {
 		select {
 		case <-p.stopChan:
 			p.stopped = true
-			l.Println("--- STOP ---")
 			break SCANNER_LOOP
 		default:
 		}
 
-		line := p.scanner.Text()
+		line, err := r.ReadString('\n')
+		if err != nil {
+			// todo: log or return error
+			break SCANNER_LOOP
+		}
 
-		realLen := len(line)
-		lineLen := uint64(realLen) + 1 // +1 for \n
+		lineLen := uint64(len(line))
 		p.bytesRead += lineLen
 		p.lineOffset = p.bytesRead - lineLen
 		if p.lineOffset != 0 {
@@ -107,7 +108,7 @@ SCANNER_LOOP:
 		//   /usr/local/bin/mysqld, Version: 5.6.15-62.0-tokudb-7.1.0-tokudb-log (binary). started with:
 		//   Tcp port: 3306  Unix socket: /var/lib/mysql/mysql.sock
 		//   Time                 Id Command    Argument
-		if realLen >= 20 && ((line[0] == FORWARD_SLASH && line[realLen-5:realLen] == "with:") ||
+		if lineLen >= 20 && ((line[0] == FORWARD_SLASH && line[lineLen-6:lineLen] == "with:\n") ||
 			(line[0:5] == "Time ") ||
 			(line[0:4] == "Tcp ") ||
 			(line[0:4] == "TCP ")) {
@@ -116,6 +117,9 @@ SCANNER_LOOP:
 			}
 			continue
 		}
+
+		// Remove \n.
+		line = line[0 : lineLen-1]
 
 		if p.inHeader {
 			p.parseHeader(line)
@@ -132,10 +136,8 @@ SCANNER_LOOP:
 		p.sendEvent(false, false)
 	}
 
-	scanErr := p.scanner.Err()
 	if p.opt.Debug {
-		fmt.Println()
-		l.Printf("done, error: %s\n", scanErr)
+		l.Printf("\ndone")
 	}
 }
 
@@ -296,6 +298,7 @@ func (p *SlowLogParser) sendEvent(inHeader bool, inQuery bool) {
 	}
 
 	// Clean up the event.
+	p.event.Db = strings.TrimSuffix(p.event.Db, ";\n")
 	p.event.Query = strings.TrimSuffix(p.event.Query, ";")
 
 	// Send the event.  This will block.
