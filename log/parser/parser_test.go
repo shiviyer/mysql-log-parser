@@ -1280,6 +1280,7 @@ func (s *SlowLogTestSuite) TestParserSlowLog001StartOffset(t *C) {
 }
 
 // Line > bufio.MaxScanTokenSize = 64KiB
+// https://jira.percona.com/browse/PCT-552
 func (s *SlowLogTestSuite) TestParserSlowLog015(t *C) {
 	got := ParseSlowLog("slow015.log", parser.Options{})
 	t.Check(*got, HasLen, 2)
