@@ -294,7 +294,7 @@ func (p *SlowLogParser) sendEvent(inHeader bool, inQuery bool) {
 	}
 
 	if _, ok := p.event.TimeMetrics["Query_time"]; !ok {
-		panic("No Query_time in event")
+		l.Panicf("No Query_time in event at %d: %#v", p.lineOffset, p.event)
 	}
 
 	// Clean up the event.
