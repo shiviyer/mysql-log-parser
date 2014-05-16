@@ -293,8 +293,21 @@ func (p *SlowLogParser) sendEvent(inHeader bool, inQuery bool) {
 		l.Println("send event")
 	}
 
+	// Make a new event and reset our metadata.
+	defer func() {
+		p.event = log.NewEvent()
+		p.headerLines = 0
+		p.queryLines = 0
+		p.inHeader = inHeader
+		p.inQuery = inQuery
+	}()
+
 	if _, ok := p.event.TimeMetrics["Query_time"]; !ok {
-		l.Panicf("No Query_time in event at %d: %#v", p.lineOffset, p.event)
+		if p.headerLines == 0 {
+			l.Panicf("No Query_time in event at %d: %#v", p.lineOffset, p.event)
+		}
+		// Started parsing in header after Query_time.  Throw away event.
+		return
 	}
 
 	// Clean up the event.
@@ -306,13 +319,5 @@ func (p *SlowLogParser) sendEvent(inHeader bool, inQuery bool) {
 	case p.EventChan <- p.event:
 	case <-p.stopChan:
 		p.stopped = true
-		return
 	}
-
-	// Make a new event and reset our metadata.
-	p.event = log.NewEvent()
-	p.headerLines = 0
-	p.queryLines = 0
-	p.inHeader = inHeader
-	p.inQuery = inQuery
 }

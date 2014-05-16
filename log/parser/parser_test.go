@@ -1285,3 +1285,57 @@ func (s *SlowLogTestSuite) TestParserSlowLog015(t *C) {
 	got := ParseSlowLog("slow015.log", parser.Options{})
 	t.Check(*got, HasLen, 2)
 }
+
+// Start in header
+func (s *SlowLogTestSuite) TestParseSlow016(t *C) {
+	got := ParseSlowLog("slow016.log", parser.Options{Debug:false})
+	expect := []log.Event{
+		{
+			Query:  `SHOW /*!50002 GLOBAL */ STATUS`,
+			User:   "pt_agent",
+			Host:   "localhost",
+			Offset: 160,
+			TimeMetrics: map[string]float32{
+				"Query_time": 0.003953,
+				"Lock_time":  0.000059,
+			},
+			NumberMetrics: map[string]uint64{
+				"Rows_sent":     571,
+				"Rows_examined": 571,
+				"Rows_affected": 0,
+			},
+			BoolMetrics: map[string]bool{},
+		},
+	}
+	if same, diff := IsDeeply(got, &expect); !same {
+		Dump(got)
+		t.Error(diff)
+	}
+}
+
+// Start in query
+func (s *SlowLogTestSuite) TestParseSlow017(t *C) {
+	got := ParseSlowLog("slow017.log", parser.Options{Debug:false})
+	expect := []log.Event{
+		{
+			Query:  `SHOW /*!50002 GLOBAL */ STATUS`,
+			User:   "pt_agent",
+			Host:   "localhost",
+			Offset: 27,
+			TimeMetrics: map[string]float32{
+				"Query_time": 0.003953,
+				"Lock_time":  0.000059,
+			},
+			NumberMetrics: map[string]uint64{
+				"Rows_sent":     571,
+				"Rows_examined": 571,
+				"Rows_affected": 0,
+			},
+			BoolMetrics: map[string]bool{},
+		},
+	}
+	if same, diff := IsDeeply(got, &expect); !same {
+		Dump(got)
+		t.Error(diff)
+	}
+}
