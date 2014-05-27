@@ -36,7 +36,7 @@ type NumberStats struct {
 
 type BoolStats struct {
 	Cnt  uint
-	True uint8
+	True uint
 }
 
 func NewEventStats() *EventStats {
