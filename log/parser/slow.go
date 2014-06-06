@@ -3,7 +3,7 @@ package parser
 import (
 	"bufio"
 	"fmt"
-	"github.com/percona/mysql-log-parser/log"
+	"github.com/vadimtk/mysql-log-parser/log"
 	l "log"
 	"os"
 	"regexp"

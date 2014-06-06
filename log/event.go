@@ -6,15 +6,17 @@ import (
 	"io"
 	"regexp"
 	"strings"
+	"github.com/glenn-brown/golang-pkg-pcre/src/pkg/pcre"
 )
 
 var spaceRe *regexp.Regexp = regexp.MustCompile(`\s+`)
 var nullRe *regexp.Regexp = regexp.MustCompile(`\bnull\b`)
 var limitRe *regexp.Regexp = regexp.MustCompile(`\blimit \?(?:, ?\?| offset \?)?`)
 var escapedQuoteRe *regexp.Regexp = regexp.MustCompile(`\\["']`)
-var doubleQuotedValRe *regexp.Regexp = regexp.MustCompile(`".*?"`)
+//var doubleQuotedValRe *regexp.Regexp = regexp.MustCompile(`".*?"`)
+var doubleQuotedValRe pcre.Regexp = pcre.MustCompile(`".*?"`,0)
 var singleQuotedValRe *regexp.Regexp = regexp.MustCompile(`'.*?'`)
-var number1Re *regexp.Regexp = regexp.MustCompile(`\b[0-9+-][0-9a-f.xb+-]*`)
+var number1Re *regexp.Regexp = regexp.MustCompile(`\b[0-9+-][0-9a-f.xb+-]*|[xb.+-]\?`)
 var number2Re *regexp.Regexp = regexp.MustCompile(`[xb.+-]\?`)
 var valueListRe *regexp.Regexp = regexp.MustCompile(`\b(in|values?)(?:[\s,]*\([\s?,]*\))+`)
 var multiLineCommentRe *regexp.Regexp = regexp.MustCompile(`(?sm)/\*[^!].*?\*/`)
@@ -76,13 +78,14 @@ func Fingerprint(q string) string {
 	q = strings.TrimSpace(q)
 
 	// Do case-insensitive replacements
-	q = spaceRe.ReplaceAllString(q, " ")
-	q = escapedQuoteRe.ReplaceAllString(q, "")
-	q = doubleQuotedValRe.ReplaceAllString(q, "?")
-	q = singleQuotedValRe.ReplaceAllString(q, "?")
+	q = spaceRe.ReplaceAllLiteralString(q, " ")
+	q = escapedQuoteRe.ReplaceAllLiteralString(q, "")
+	//q = doubleQuotedValRe.ReplaceAllLiteralString(q, "?")
+	q = string(doubleQuotedValRe.ReplaceAll([]byte(q), []byte("?"),0))
+	q = singleQuotedValRe.ReplaceAllLiteralString(q, "?")
 	// @todo Are 2 passes really necessary?
-	q = number1Re.ReplaceAllString(q, "?")
-	q = number2Re.ReplaceAllString(q, "?")
+	q = number1Re.ReplaceAllLiteralString(q, "?")
+	//q = number2Re.ReplaceAllLiteralString(q, "?")
 
 	// Lowercase the query then do case-sensitive replacements
 	q = strings.ToLower(q)

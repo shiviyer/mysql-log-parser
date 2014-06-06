@@ -2,6 +2,7 @@ package log
 
 import (
 	"sort"
+	"github.com/vadimtk/gkquantile"
 )
 
 type EventStats struct {
@@ -20,6 +21,7 @@ type TimeStats struct {
 	Stddev uint64
 	Med    float64
 	Max    float64
+	GKq    *gkquantile.GKSummary
 }
 
 type NumberStats struct {
@@ -55,12 +57,14 @@ func (s *EventStats) Add(e *Event) {
 		if !seenMetric {
 			s.TimeMetrics[metric] = &TimeStats{
 				vals: []float64{},
+				GKq: gkquantile.NewGKSummary(0.025),
 			}
 			stats = s.TimeMetrics[metric]
 		}
 		stats.Cnt++
 		stats.Sum += float64(val)
 		stats.vals = append(stats.vals, float64(val))
+		stats.GKq.Add(float64(val))
 	}
 
 	for metric, val := range e.NumberMetrics {
