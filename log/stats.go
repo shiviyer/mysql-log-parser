@@ -50,6 +50,11 @@ func NewEventStats() *EventStats {
 	return s
 }
 
+func (s *TimeStats) GetVals() []float64 {
+	return s.vals
+
+}
+
 func (s *EventStats) Add(e *Event) {
 
 	for metric, val := range e.TimeMetrics {
@@ -57,7 +62,7 @@ func (s *EventStats) Add(e *Event) {
 		if !seenMetric {
 			s.TimeMetrics[metric] = &TimeStats{
 				vals: []float64{},
-				GKq: gkquantile.NewGKSummary(0.025),
+				GKq: gkquantile.NewGKSummary(0.01),
 			}
 			stats = s.TimeMetrics[metric]
 		}
@@ -122,6 +127,7 @@ func (s *EventStats) Current() {
 		// s.Stddev = @todo
 		s.Med = s.vals[(50*s.Cnt)/100] // median = 50th percentile
 		s.Max = s.vals[s.Cnt-1]
+		s.GKq.Compress()
 	}
 
 	for _, s := range s.NumberMetrics {
