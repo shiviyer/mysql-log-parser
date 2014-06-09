@@ -134,7 +134,7 @@ func main() {
 
  fmt.Printf("Real 95pct %f, med: %f\n",  gotG.Global.Metrics.TimeMetrics["Query_time"].Pct95,gotG.Global.Metrics.TimeMetrics["Query_time"].Med )
  fmt.Printf("GK length: %d\n",  len(gotG.Global.Metrics.TimeMetrics["Query_time"].GKq.Items))
- gotG.Global.Metrics.TimeMetrics["Query_time"].GKq.Print()
+ gotG.Global.Metrics.TimeMetrics["Query_time"].GKq.Histo(20)
  for _,v := range gotG.Classes {
   if v.TotalQueries > gotG.Global.TotalQueries / 10 {
  fmt.Printf("Query ID %s, Events: %d\n", v.Id, v.TotalQueries)
@@ -145,6 +145,7 @@ func main() {
  }
  fmt.Printf("Real 95pct %f, med: %f\n",  v.Metrics.TimeMetrics["Query_time"].Pct95,v.Metrics.TimeMetrics["Query_time"].Med )
  fmt.Printf("GK length: %d\n",  len(v.Metrics.TimeMetrics["Query_time"].GKq.Items))
+ 	v.Metrics.TimeMetrics["Query_time"].GKq.Histo(20)
  }
 // fmt.Printf("%.7f\n",v)
  }
